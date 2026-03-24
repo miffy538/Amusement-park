@@ -1,406 +1,301 @@
-/*
- Amusement Park Layout - macOS version
- Compile:
- g++ amusement_park_layout.cpp -o park -framework OpenGL -framework GLUT -Wno-deprecated
- ./park
-*/
-
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-
+#define GL_SILENCE_DEPRECATION
+#include <GL/glut.h>
 #include <cmath>
-#include <vector>
-#include <cstring>
 
-const int W = 1000;
-const int H = 720;
+float angleY   = 20.0f;
+float angleX   = 25.0f;
+float zoomDist = 100.0f;
 
+int  lastMouseX = -1, lastMouseY = -1;
+bool mouseDown  = false;
 
-// ==============================
-// ISOMETRIC TRANSFORM
-// ==============================
-
-const float TILE  = 54.f;
-const float TILEY = 27.f;
-
-const float OX = W * 0.5f;
-const float OY = H * 0.84f;
-
-struct P2
+/* =============================
+   GROUND (checker grass)
+============================= */
+void drawGround()
 {
-    float x;
-    float y;
-};
+    int   tiles = 16;
+    float size  = 140.0f;
+    float tileW = size / tiles;
+    float off   = -size * 0.5f;
 
-
-P2 g2s(float gc, float gr)
-{
-    P2 p;
-
-    p.x = OX + (gc - gr) * TILE;
-    p.y = OY - (gc + gr) * TILEY;
-
-    return p;
+    for (int i = 0; i < tiles; i++)
+        for (int j = 0; j < tiles; j++) {
+            if ((i + j) % 2 == 0) glColor3f(0.28f, 0.72f, 0.28f);
+            else                   glColor3f(0.26f, 0.68f, 0.26f);
+            float x0 = off + i * tileW, z0 = off + j * tileW;
+            glBegin(GL_QUADS);
+            glVertex3f(x0,       0.0f, z0);
+            glVertex3f(x0+tileW, 0.0f, z0);
+            glVertex3f(x0+tileW, 0.0f, z0+tileW);
+            glVertex3f(x0,       0.0f, z0+tileW);
+            glEnd();
+        }
 }
 
-
-
-// ==============================
-// COLOR
-// ==============================
-
-void col(float r, float g, float b)
+/* =============================
+   ROAD  (dark asphalt + dashed centre line)
+============================= */
+void drawRoad(float x1, float z1, float x2, float z2)
 {
-    glColor3f(r, g, b);
-}
-
-
-
-// ==============================
-// DRAW POLYGON
-// ==============================
-
-void screenPoly(const std::vector<P2>& pts, float r, float g, float b)
-{
-    col(r, g, b);
-
-    glBegin(GL_POLYGON);
-
-    for (auto& p : pts)
-        glVertex2f(p.x, p.y);
-
-    glEnd();
-}
-
-
-
-// ==============================
-// ISO TILE
-// ==============================
-
-void isoTile(float gc, float gr, float w, float h,
-             float r, float g, float b)
-{
-    P2 l = g2s(gc,     gr + h);
-    P2 t = g2s(gc + w, gr + h);
-    P2 r2 = g2s(gc + w, gr);
-    P2 b2 = g2s(gc,     gr);
-
-    screenPoly({l, t, r2, b2}, r, g, b);
-}
-
-
-
-// ==============================
-// ROAD
-// ==============================
-
-void road(float gc1, float gr1,
-          float gc2, float gr2,
-          float width = 0.36f)
-{
-    float dx = gc2 - gc1;
-    float dy = gr2 - gr1;
-
-    float len = sqrtf(dx * dx + dy * dy);
-    if (len < 0.001f) return;
-
-    float nx =  dy / len * width;
-    float ny = -dx / len * width;
-
-    P2 a = g2s(gc1 - nx, gr1 - ny);
-    P2 b = g2s(gc1 + nx, gr1 + ny);
-    P2 c = g2s(gc2 + nx, gr2 + ny);
-    P2 d = g2s(gc2 - nx, gr2 - ny);
-
-    col(0.93f, 0.80f, 0.44f);
-
+    glColor3f(0.22f, 0.22f, 0.22f);
     glBegin(GL_QUADS);
-
-    glVertex2f(a.x, a.y);
-    glVertex2f(b.x, b.y);
-    glVertex2f(c.x, c.y);
-    glVertex2f(d.x, d.y);
-
+    glVertex3f(x1, 0.03f, z1);
+    glVertex3f(x2, 0.03f, z1);
+    glVertex3f(x2, 0.03f, z2);
+    glVertex3f(x1, 0.03f, z2);
     glEnd();
-}
 
+    bool  horiz = fabsf(x2 - x1) > fabsf(z2 - z1);
+    float cx    = (x1 + x2) * 0.5f;
+    float cz    = (z1 + z2) * 0.5f;
+    float len   = horiz ? fabsf(x2 - x1) : fabsf(z2 - z1);
+    int   dashes = (int)(len / 5);
 
-
-void windRoad(const std::vector<std::pair<float, float>>& pts,
-              float w = 0.36f)
-{
-    for (int i = 0; i + 1 < pts.size(); i++)
-    {
-        road(
-            pts[i].first,
-            pts[i].second,
-            pts[i + 1].first,
-            pts[i + 1].second,
-            w
-        );
+    glColor3f(0.9f, 0.8f, 0.0f);
+    for (int d = 0; d < dashes; d += 2) {
+        glBegin(GL_QUADS);
+        if (horiz) {
+            float xa = x1 + d * 5.0f, xb = xa + 4.0f;
+            glVertex3f(xa, 0.04f, cz - 0.15f);
+            glVertex3f(xb, 0.04f, cz - 0.15f);
+            glVertex3f(xb, 0.04f, cz + 0.15f);
+            glVertex3f(xa, 0.04f, cz + 0.15f);
+        } else {
+            float za = z1 + d * 5.0f, zb = za + 4.0f;
+            glVertex3f(cx - 0.15f, 0.04f, za);
+            glVertex3f(cx + 0.15f, 0.04f, za);
+            glVertex3f(cx + 0.15f, 0.04f, zb);
+            glVertex3f(cx - 0.15f, 0.04f, zb);
+        }
+        glEnd();
     }
 }
 
-
-
-// ==============================
-// ISO BOX
-// ==============================
-
-void isoBox(
-    float gc, float gr,
-    float w, float d,
-    float h,
-
-    float rt, float gt, float bt,
-    float rf, float gf, float bf,
-    float rr, float gr2, float br2
-)
+/* =============================
+   TREE  (trunk + stacked cones)
+============================= */
+void drawTree(float x, float z)
 {
-    P2 fl = g2s(gc, gr);
-    P2 fr = g2s(gc + w, gr);
+    glPushMatrix();
+    glTranslatef(x, 0.0f, z);
 
-    P2 bl = g2s(gc, gr + d);
-    P2 br = g2s(gc + w, gr + d);
+    /* trunk */
+    glColor3f(0.42f, 0.27f, 0.12f);
+    glPushMatrix();
+    glTranslatef(0, 1.5f, 0);
+    glRotatef(-90, 1, 0, 0);
+    GLUquadric* q = gluNewQuadric();
+    gluCylinder(q, 0.25, 0.18, 3.0, 8, 1);
+    gluDeleteQuadric(q);
+    glPopMatrix();
 
-    auto up = [&](P2 p)
-    {
-        P2 q;
-        q.x = p.x;
-        q.y = p.y + h;
-        return q;
-    };
+    /* foliage — 3 stacked cones */
+    for (int layer = 0; layer < 3; layer++) {
+        glColor3f(0.12f, 0.55f - layer * 0.04f, 0.18f);
+        glPushMatrix();
+        glTranslatef(0, 3.0f + layer * 1.6f, 0);
+        glRotatef(-90, 1, 0, 0);
+        GLUquadric* qc = gluNewQuadric();
+        gluCylinder(qc, 1.5f - layer * 0.35f, 0.0f, 2.0f, 8, 1);
+        gluDeleteQuadric(qc);
+        glPopMatrix();
+    }
 
-    P2 Ufl = up(fl);
-    P2 Ufr = up(fr);
-    P2 Ubl = up(bl);
-    P2 Ubr = up(br);
-
-
-    screenPoly({Ubl, Ubr, Ufr, Ufl}, rt, gt, bt);
-    screenPoly({Ufl, Ufr, fr, fl},   rf, gf, bf);
-    screenPoly({Ufr, Ubr, br, fr},   rr, gr2, br2);
+    glPopMatrix();
 }
 
-
-
-// ==============================
-// ZONE
-// ==============================
-
-void zone(
-    float gc,
-    float gr,
-    float w,
-    float d,
-    const char* lbl
-)
+/* =============================
+   FENCE  (posts + two rails)
+============================= */
+void drawFenceSegment(float x1, float z1, float x2, float z2)
 {
-    float h = 22.f;
+    float dx   = x2 - x1, dz = z2 - z1;
+    float len  = sqrtf(dx * dx + dz * dz);
+    float ang  = atan2f(dx, dz) * 180.0f / (float)M_PI;
+    int   posts = (int)(len / 3.0f) + 1;
 
-    isoBox(
-        gc, gr, w, d, h,
+    glPushMatrix();
+    glTranslatef(x1, 0.0f, z1);
+    glRotatef(ang, 0, 1, 0);
 
-        0.42f, 0.66f, 0.24f,
-        0.30f, 0.50f, 0.16f,
-        0.24f, 0.42f, 0.12f
-    );
+    for (int p = 0; p < posts; p++) {
+        float px = p * (len / (posts - 1));
 
+        /* post */
+        glColor3f(0.65f, 0.45f, 0.20f);
+        glPushMatrix();
+        glTranslatef(0, 1.0f, px);
+        glRotatef(-90, 1, 0, 0);
+        GLUquadric* q = gluNewQuadric();
+        gluCylinder(q, 0.08, 0.08, 2.0, 6, 1);
+        gluDeleteQuadric(q);
+        glPopMatrix();
 
-    P2 mid = g2s(gc + w * 0.5f,
-                 gr + d * 0.5f);
+        /* post cap */
+        glColor3f(0.55f, 0.35f, 0.12f);
+        glPushMatrix();
+        glTranslatef(0, 3.1f, px);
+        glutSolidSphere(0.12, 6, 6);
+        glPopMatrix();
+    }
 
-    mid.y += 26;
+    /* two horizontal rails */
+    glColor3f(0.60f, 0.42f, 0.18f);
+    for (int r = 0; r < 2; r++) {
+        float ry = (r == 0) ? 1.6f : 2.6f;
+        glBegin(GL_QUADS);
+        glVertex3f(-0.06f, ry, 0);
+        glVertex3f( 0.06f, ry, 0);
+        glVertex3f( 0.06f, ry, len);
+        glVertex3f(-0.06f, ry, len);
+        glEnd();
+    }
 
-
-    glColor3f(0, 0, 0);
-
-    glRasterPos2f(
-        mid.x - strlen(lbl) * 3,
-        mid.y
-    );
-
-    for (const char* c = lbl; *c; c++)
-        glutBitmapCharacter(
-            GLUT_BITMAP_HELVETICA_10,
-            *c
-        );
+    glPopMatrix();
 }
 
-
-
-// ==============================
-// DISPLAY
-// ==============================
-
+/* =============================
+   DISPLAY
+============================= */
 void display()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
 
+    float radX = angleX * (float)M_PI / 180.0f;
+    float radY = angleY * (float)M_PI / 180.0f;
+    float ex   = zoomDist * cosf(radX) * sinf(radY);
+    float ey   = zoomDist * sinf(radX);
+    float ez   = zoomDist * cosf(radX) * cosf(radY);
+    gluLookAt(ex, ey, ez,  0, 0, 0,  0, 1, 0);
 
+    drawGround();
 
-    // SKY
+    /* ---- Horizontal roads ---- */
+    drawRoad(-55, -22,  55, -16);
+    drawRoad(-55,   0,  55,   6);
+    drawRoad(-55,  22,  55,  28);
 
-    col(0.76f, 0.87f, 1.0f);
+    /* ---- Vertical roads ---- */
+    drawRoad(-22, -55, -16,  55);
+    drawRoad(  0, -55,   6,  55);
+    drawRoad( 22, -55,  28,  55);
 
-    glBegin(GL_QUADS);
+    /* ---- Perimeter fence ---- */
+    float F = 62.0f;
+    drawFenceSegment(-F, -F,  F, -F);   /* south */
+    drawFenceSegment( F, -F,  F,  F);   /* east  */
+    drawFenceSegment( F,  F, -F,  F);   /* north */
+    drawFenceSegment(-F,  F, -F, -F);   /* west  */
 
-    glVertex2f(0, 0);
-    glVertex2f(W, 0);
-    glVertex2f(W, H);
-    glVertex2f(0, H);
+    /* ---- Perimeter trees (inside fence) ---- */
+    float T = 57.0f;
+    for (int i = -5; i <= 5; i++) {
+        drawTree(-T,  i * 11.0f);
+        drawTree( T,  i * 11.0f);
+        drawTree( i * 11.0f, -T);
+        drawTree( i * 11.0f,  T);
+    }
 
-    glEnd();
-
-
-
-    // GROUND
-
-    isoTile(
-        -0.2f,
-        -0.2f,
-        10.4f,
-        10.4f,
-
-        0.30f,
-        0.55f,
-        0.14f
-    );
-
-
-    isoTile(
-        0.3f,
-        0.3f,
-        9.4f,
-        9.4f,
-
-        0.40f,
-        0.70f,
-        0.20f
-    );
-
-
-
-    // ROADS
-
-    // Main spine: entrance (right side) winding through park center to back
-    windRoad({
-        {5.0f, 0.3f},
-        {5.0f, 1.5f},
-        {4.5f, 2.5f},
-        {4.2f, 3.5f},
-        {3.8f, 5.0f},
-        {4.0f, 6.5f},
-        {4.3f, 7.5f}
-    });
-
-    // Left branch: Carousel -> Track -> Roller zones
-    windRoad({
-        {4.2f, 3.5f},
-        {2.8f, 3.2f},
-        {1.5f, 3.8f},
-        {1.2f, 5.2f},
-        {1.0f, 6.8f},
-        {1.3f, 7.8f}
-    });
-
-    // Right branch: Cars -> Stage zones
-    windRoad({
-        {4.2f, 3.5f},
-        {5.8f, 3.2f},
-        {7.2f, 4.2f},
-        {7.8f, 5.5f},
-        {7.5f, 7.2f}
-    });
-
-    // Shops branch (top-left area)
-    windRoad({
-        {5.0f, 1.5f},
-        {3.2f, 1.5f},
-        {2.0f, 2.0f}
-    });
-
-    // Food branch (top-right area)
-    windRoad({
-        {5.0f, 1.5f},
-        {6.8f, 1.5f},
-        {7.5f, 2.2f}
-    });
-
-
-
-    // ZONES
-
-    zone(0.3f,7.2f,2.4f,2,"Roller");
-    zone(3.5f,7.2f,2.4f,2,"Lake");
-    zone(6.8f,6.9f,2.5f,2,"Stage");
-
-    zone(0.3f,4.8f,2.1f,2,"Track");
-    zone(0.4f,3.0f,1.9f,2,"Carousel");
-
-    zone(2.8f,5.0f,2.5f,2,"Circus");
-    zone(6.8f,4.6f,2.3f,2,"Cars");
-
-    zone(1.0f,1.3f,2.0f,2.0f,"Shops");
-    zone(6.4f,1.3f,2,2,"Food");
-
-
+    /* ---- Trees lining the vertical roads ---- */
+    for (int i = -4; i <= 4; i++) {
+        drawTree(-23, i * 11.0f);
+        drawTree(-13, i * 11.0f);
+        drawTree( -3, i * 11.0f);
+        drawTree(  9, i * 11.0f);
+        drawTree( 19, i * 11.0f);
+        drawTree( 31, i * 11.0f);
+    }
 
     glutSwapBuffers();
 }
 
-
-
-// ==============================
-// RESHAPE
-// ==============================
-
+/* =============================
+   RESHAPE
+============================= */
 void reshape(int w, int h)
 {
+    if (h == 0) h = 1;
     glViewport(0, 0, w, h);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-
-    gluOrtho2D(0, W, 0, H);
-
+    gluPerspective(55, (float)w / h, 1, 500);
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
+/* =============================
+   KEYBOARD
+============================= */
+void keyboard(unsigned char key, int, int)
+{
+    if (key == '+' || key == '=') zoomDist -= 5.0f;
+    if (key == '-')               zoomDist += 5.0f;
+    zoomDist = fmaxf(20.0f, fminf(250.0f, zoomDist));
+    glutPostRedisplay();
+}
 
+void specialKeys(int key, int, int)
+{
+    if (key == GLUT_KEY_LEFT)  angleY -= 3.0f;
+    if (key == GLUT_KEY_RIGHT) angleY += 3.0f;
+    if (key == GLUT_KEY_UP)    angleX = fminf(angleX + 2.0f, 85.0f);
+    if (key == GLUT_KEY_DOWN)  angleX = fmaxf(angleX - 2.0f,  5.0f);
+    glutPostRedisplay();
+}
 
-// ==============================
-// MAIN
-// ==============================
+/* =============================
+   MOUSE DRAG + SCROLL
+============================= */
+void mouseButton(int btn, int state, int x, int y)
+{
+    if (btn == GLUT_LEFT_BUTTON) {
+        mouseDown  = (state == GLUT_DOWN);
+        lastMouseX = x;
+        lastMouseY = y;
+    }
+    if (btn == 3) { zoomDist -= 3.0f; glutPostRedisplay(); }
+    if (btn == 4) { zoomDist += 3.0f; glutPostRedisplay(); }
+}
 
+void mouseMotion(int x, int y)
+{
+    if (!mouseDown) return;
+    int dx = x - lastMouseX, dy = y - lastMouseY;
+    angleY += dx * 0.4f;
+    angleX  = fmaxf(5.0f, fminf(85.0f, angleX - dy * 0.35f));
+    lastMouseX = x;
+    lastMouseY = y;
+    glutPostRedisplay();
+}
+
+/* =============================
+   INIT
+============================= */
+void init()
+{
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.42f, 0.72f, 0.98f, 1.0f);
+}
+
+/* =============================
+   MAIN
+============================= */
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(1200, 750);
+    glutCreateWindow("3D Amusement Park — Base Layout");
 
-    glutInitDisplayMode(
-        GLUT_DOUBLE | GLUT_RGB
-    );
-
-    glutInitWindowSize(W, H);
-
-    glutCreateWindow(
-        "Amusement Park Layout"
-    );
-
-    glClearColor(
-        0.76f,
-        0.87f,
-        1.0f,
-        1.0f
-    );
-
+    init();
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeys);
+    glutMouseFunc(mouseButton);
+    glutMotionFunc(mouseMotion);
 
     glutMainLoop();
-
     return 0;
 }
