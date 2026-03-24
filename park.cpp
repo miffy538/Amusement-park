@@ -285,49 +285,66 @@ void display()
 
     // ROADS
 
-    // windRoad({
-    //     {5,0},
-    //     {5,1},
-    //     {4.5,2},
-    //     {4.2,3.5},
-    //     {4,5},
-    //     {4.5,7}
-    // });
+    // Main spine: entrance (right side) winding through park center to back
+    windRoad({
+        {5.0f, 0.3f},
+        {5.0f, 1.5f},
+        {4.5f, 2.5f},
+        {4.2f, 3.5f},
+        {3.8f, 5.0f},
+        {4.0f, 6.5f},
+        {4.3f, 7.5f}
+    });
 
+    // Left branch: Carousel -> Track -> Roller zones
+    windRoad({
+        {4.2f, 3.5f},
+        {2.8f, 3.2f},
+        {1.5f, 3.8f},
+        {1.2f, 5.2f},
+        {1.0f, 6.8f},
+        {1.3f, 7.8f}
+    });
 
-    // windRoad({
-    //     {4.2,3.5},
-    //     {2.5,3},
-    //     {1,4},
-    //     {1,6},
-    //     {2,8}
-    // });
+    // Right branch: Cars -> Stage zones
+    windRoad({
+        {4.2f, 3.5f},
+        {5.8f, 3.2f},
+        {7.2f, 4.2f},
+        {7.8f, 5.5f},
+        {7.5f, 7.2f}
+    });
 
+    // Shops branch (top-left area)
+    windRoad({
+        {5.0f, 1.5f},
+        {3.2f, 1.5f},
+        {2.0f, 2.0f}
+    });
 
-    // windRoad({
-    //     {4.2,3.5},
-    //     {6,3},
-    //     {8,4},
-    //     {8,6},
-    //     {7,8}
-    // });
+    // Food branch (top-right area)
+    windRoad({
+        {5.0f, 1.5f},
+        {6.8f, 1.5f},
+        {7.5f, 2.2f}
+    });
 
 
 
     // ZONES
 
-    // zone(0.3f,7.2f,2.4f,2,"Roller");
-    // zone(3.5f,7.2f,2.4f,2,"Lake");
-    // zone(6.8f,6.9f,2.5f,2,"Stage");
+    zone(0.3f,7.2f,2.4f,2,"Roller");
+    zone(3.5f,7.2f,2.4f,2,"Lake");
+    zone(6.8f,6.9f,2.5f,2,"Stage");
 
-    // zone(0.3f,4.8f,2.1f,2,"Track");
-    // zone(0.4f,3.0f,1.9f,2,"Carousel");
+    zone(0.3f,4.8f,2.1f,2,"Track");
+    zone(0.4f,3.0f,1.9f,2,"Carousel");
 
-    // zone(2.8f,5.0f,2.5f,2,"Circus");
-    // zone(6.8f,4.6f,2.3f,2,"Cars");
+    zone(2.8f,5.0f,2.5f,2,"Circus");
+    zone(6.8f,4.6f,2.3f,2,"Cars");
 
-    // zone(1,1.3f,2,2,"Shops");
-    // zone(6.4f,1.3f,2,2,"Food");
+    zone(1.0f,1.3f,2.0f,2.0f,"Shops");
+    zone(6.4f,1.3f,2,2,"Food");
 
 
 
