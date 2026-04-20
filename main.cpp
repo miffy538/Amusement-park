@@ -1638,95 +1638,105 @@ void drawBigDiningTable(float x,float z,float r,float g,float b){
 void drawRingTossStall(float cx,float cz,float ang){
     glPushMatrix();glTranslatef(cx,0,cz);glRotatef(ang,0,1,0);
     GLUquadric*q=gluNewQuadric();
+
+    /* ===== BIGGER COUNTER ===== */
     glColor3f(0.48f,0.26f,0.10f);
-    glPushMatrix();glScalef(3.5f,1.0f,2.2f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glScalef(5.0f,1.4f,3.2f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
+
+    /* ===== TOP SLAB ===== */
     glColor3f(.78f,.65f,.50f);
-    glPushMatrix();glTranslatef(0,1.06f,0);glScalef(3.6f,.10f,2.3f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,1.5f,0);glScalef(5.2f,.14f,3.4f);glutSolidCube(1);glPopMatrix();
+
+    /* ===== TALLER POLES ===== */
     for(int i=-1;i<=1;i+=2){
         glColor3f(1.0f,0.1f,0.1f);
-        glPushMatrix();glTranslatef(i*1.6f,1.1f,-1.0f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.12,.12,4.5f,8,1);glPopMatrix();
-        glPushMatrix();glTranslatef(i*1.6f,1.1f,1.0f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.12,.12,4.5f,8,1);glPopMatrix();
-        for(int s=0;s<4;s++){
+
+        glPushMatrix();glTranslatef(i*2.2f,1.5f,-1.5f);glRotatef(-90,1,0,0);
+        gluCylinder(q,.14,.14,6.5f,10,1);glPopMatrix();
+
+        glPushMatrix();glTranslatef(i*2.2f,1.5f,1.5f);glRotatef(-90,1,0,0);
+        gluCylinder(q,.14,.14,6.5f,10,1);glPopMatrix();
+
+        /* stripes */
+        for(int s=0;s<5;s++){
             glColor3f(1,s%2==0?1:0.1f,0.1f);
-            glPushMatrix();glTranslatef(i*1.6f,1.8f+s*.9f,-1.0f);
-            gluCylinder(q,.13,.13,.4f,8,1);glPopMatrix();
-            glPushMatrix();glTranslatef(i*1.6f,1.8f+s*.9f,1.0f);
-            gluCylinder(q,.13,.13,.4f,8,1);glPopMatrix();
+
+            glPushMatrix();glTranslatef(i*2.2f,2.2f+s*1.2f,-1.5f);
+            gluCylinder(q,.15,.15,.5f,8,1);glPopMatrix();
+
+            glPushMatrix();glTranslatef(i*2.2f,2.2f+s*1.2f,1.5f);
+            gluCylinder(q,.15,.15,.5f,8,1);glPopMatrix();
         }
     }
-    for(int s=0;s<8;s++){
+
+    /* ===== BIGGER ROOF ===== */
+    for(int s=0;s<10;s++){
         glColor3f(s%2==0?.98f:.22f,s%2==0?.10f:.55f,s%2==0?.10f:.22f);
-        float ax=-1.6f+s*.4f;
+        float ax=-2.2f+s*.5f;
+
         glBegin(GL_QUADS);
-        glVertex3f(ax,5.65f,-1.1f);glVertex3f(ax+.4f,5.65f,-1.1f);
-        glVertex3f(ax+.4f,5.12f,-1.7f);glVertex3f(ax,5.12f,-1.7f);glEnd();
+        glVertex3f(ax,7.5f,-1.6f);glVertex3f(ax+.5f,7.5f,-1.6f);
+        glVertex3f(ax+.5f,6.8f,-2.4f);glVertex3f(ax,6.8f,-2.4f);glEnd();
+
         glBegin(GL_QUADS);
-        glVertex3f(ax,5.65f,-1.1f);glVertex3f(ax+.4f,5.65f,-1.1f);
-        glVertex3f(ax+.4f,5.65f,1.1f);glVertex3f(ax,5.65f,1.1f);glEnd();
+        glVertex3f(ax,7.5f,-1.6f);glVertex3f(ax+.5f,7.5f,-1.6f);
+        glVertex3f(ax+.5f,7.5f,1.6f);glVertex3f(ax,7.5f,1.6f);glEnd();
+
         glBegin(GL_QUADS);
-        glVertex3f(ax,5.65f,1.1f);glVertex3f(ax+.4f,5.65f,1.1f);
-        glVertex3f(ax+.4f,5.12f,1.7f);glVertex3f(ax,5.12f,1.7f);glEnd();
+        glVertex3f(ax,7.5f,1.6f);glVertex3f(ax+.5f,7.5f,1.6f);
+        glVertex3f(ax+.5f,6.8f,2.4f);glVertex3f(ax,6.8f,2.4f);glEnd();
     }
+
+    /* ===== BIGGER RING STANDS ===== */
     for(int p=0;p<3;p++){
         glColor3f(0.22f,0.22f,0.22f);
-        glPushMatrix();glTranslatef(-0.8f+p*.8f,1.1f,0);glRotatef(-90,1,0,0);
-        gluCylinder(q,.06,.06,.8f,6,1);glPopMatrix();
+        glPushMatrix();glTranslatef(-1.2f+p*1.2f,1.5f,0);glRotatef(-90,1,0,0);
+        gluCylinder(q,.08,.08,1.2f,6,1);glPopMatrix();
     }
+
+    /* ===== BIGGER RINGS ===== */
     float ringC[][3]={{1,.2f,.2f},{.2f,.2f,1},{1,.88f,.0f}};
     for(int r=0;r<3;r++){
         glColor3f(ringC[r][0],ringC[r][1],ringC[r][2]);
-        glPushMatrix();glTranslatef(-0.8f+r*.8f,2.0f,0);
+        glPushMatrix();glTranslatef(-1.2f+r*1.2f,2.6f,0);
         glRotatef(-90,1,0,0);
-        gluDisk(q,.22f,.32f,14,2);glPopMatrix();
+        gluDisk(q,.30f,.45f,16,2);glPopMatrix();
     }
+
     gluDeleteQuadric(q);glPopMatrix();
 }
 
 /* ─────────────────────────────
    SHOOTING GALLERY
 ───────────────────────────── */
-void drawShootingGallery(float cx,float cz,float ang){
-    glPushMatrix();glTranslatef(cx,0,cz);glRotatef(ang,0,1,0);
-    GLUquadric*q=gluNewQuadric();
-    glColor3f(0.18f,0.28f,0.68f);
-    glPushMatrix();glScalef(5.0f,1.2f,2.5f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
-    glColor3f(.75f,.72f,.65f);
-    glPushMatrix();glTranslatef(0,1.28f,0);glScalef(5.2f,.12f,2.6f);glutSolidCube(1);glPopMatrix();
-    glColor3f(0.22f,0.38f,0.78f);
-    glPushMatrix();glTranslatef(0,3.2f,-1.2f);glScalef(5.2f,4.2f,.15f);glutSolidCube(1);glPopMatrix();
-    for(int t=0;t<5;t++){
-        float ta=sinf(windTime*0.8f+t*1.2f);
-        glColor3f(0.95f,0.78f,0.12f);
-        glPushMatrix();glTranslatef(-1.8f+t*.9f,3.5f+ta*.4f,-1.05f);
-        glScalef(.35f,.28f,.15f);glutSolidSphere(1,8,8);glPopMatrix();
-        glColor3f(1.0f,0.6f,0.0f);
-        glPushMatrix();glTranslatef(-1.4f+t*.9f,3.6f+ta*.4f,-1.05f);
-        glScalef(.18f,.12f,.08f);glutSolidSphere(1,6,6);glPopMatrix();
-    }
-    float bc[][3]={{1,.1f,.1f},{.1f,.5f,1},{.1f,.9f,.2f},{1,.85f,.0f}};
-    for(int p=0;p<4;p++){
-        glColor3f(bc[p][0],bc[p][1],bc[p][2]);
-        glPushMatrix();glTranslatef(-1.4f+p*.9f,4.5f,-1.1f);
-        glScalef(.5f,.6f,.5f);glutSolidSphere(1,8,8);glPopMatrix();
-        glColor3f(1,1,0);
-        glPushMatrix();glTranslatef(-1.4f+p*.9f,4.9f,-.8f);
-        glutSolidSphere(.12f,6,6);glPopMatrix();
-    }
-    glColor3f(.42f,.28f,.12f);
-    glPushMatrix();glTranslatef(0,1.38f,1.1f);glScalef(5.0f,.18f,.32f);glutSolidCube(1);glPopMatrix();
-    for(int s=0;s<10;s++){
-        glColor3f(s%2==0?.12f:.98f,s%2==0?.28f:.10f,s%2==0?.68f:.10f);
-        float ax=-2.4f+s*.5f;
-        glBegin(GL_QUADS);
-        glVertex3f(ax,5.5f,1.3f);glVertex3f(ax+.5f,5.5f,1.3f);
-        glVertex3f(ax+.5f,4.9f,1.9f);glVertex3f(ax,4.9f,1.9f);glEnd();
-        glBegin(GL_QUADS);
-        glVertex3f(ax,5.5f,-1.3f);glVertex3f(ax+.5f,5.5f,-1.3f);
-        glVertex3f(ax+.5f,5.5f,1.3f);glVertex3f(ax,5.5f,1.3f);glEnd();
-    }
-    gluDeleteQuadric(q);glPopMatrix();
+void drawShootingGallery(){
+    GLUquadric* q = gluNewQuadric();
+
+    // Barrel
+    glColor3f(0.1f,0.1f,0.1f);
+    glPushMatrix();
+    glRotatef(-90,1,0,0);
+    gluCylinder(q,0.05,0.05,1.2,10,1);
+    glPopMatrix();
+
+    // Body
+    glColor3f(0.3f,0.3f,0.3f);
+    glPushMatrix();
+    glTranslatef(0,0.2f,0);
+    glScalef(0.3f,0.2f,1.0f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    // Handle
+    glColor3f(0.4f,0.25f,0.1f);
+    glPushMatrix();
+    glTranslatef(0,-0.2f,0.3f);
+    glRotatef(-20,1,0,0);
+    glScalef(0.2f,0.5f,0.3f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    gluDeleteQuadric(q);
 }
 
 void drawCircusTent(float cx, float cz) {
@@ -1843,7 +1853,6 @@ void drawCircusTent(float cx, float cz) {
     }
  
     
-  
  
     /* ── pennant flags around perimeter ── */
     extern float windTime;
@@ -1875,7 +1884,25 @@ void drawCircusTent(float cx, float cz) {
     }
  
     
- 
+ /* ===== GUNS ON COUNTER ===== */
+for(int g=0; g<4; g++){
+    glPushMatrix();
+
+    // spacing
+    glTranslatef(-1.8f + g*1.2f, 1.6f, 1.2f);
+
+    // tilt gun forward slightly
+    glRotatef(-20,1,0,0);
+
+    // rotate sideways
+    glRotatef(90,0,1,0);
+
+    glScalef(0.9f,0.9f,0.9f);   // size
+
+    drawShootingGallery();
+
+    glPopMatrix();
+}
    
  
     gluDeleteQuadric(q);
@@ -3173,6 +3200,7 @@ for(int i=0;i<8;i++){
     drawTicketBooth(36,-10,270);//merry go round ticket booth
     drawTicketBooth(-50,30,180);//merry go round ticket booth
     drawTicketBooth(-20,-15,180);//merry go round ticket booth
+    drawTicketBooth(-40,-15,90);//pirate ship ticket booth
 
     drawLampPost(-14,-58);drawLampPost( 14,-58);
     drawLampPost( -8,-47);drawLampPost(  8,-47);
@@ -3205,8 +3233,10 @@ for(int i=0;i<8;i++){
     drawBench(-16,24,0);drawBench(18,24,0);
     drawBench(-16,32,0);drawBench(18,32,0);
     drawTrashBin(-12,26,0.62f,0.18f,0.88f);drawTrashBin(14,26,0.62f,0.18f,0.88f);
-    drawBalloonStall(24,28,270);
-    drawBalloonStall(-22,28,90);
+    drawBalloonStall(15,-46,270);
+    drawBalloonStall(-15,-46,90);
+    drawBalloonStall(-15,-30,90);
+    drawBalloonStall(-15,-30,90);
 
     /* ── RIDE ZONE (east, X=30-62) ── */
     drawGiantWheel(46,42);
@@ -3255,17 +3285,17 @@ for(int i=0;i<8;i++){
 
 
     /* ── GAME STALLS (NW, X=-62..-22, Z=+10..+62) ── */
-    drawRingTossStall  (-44,28,  0);
-    drawShootingGallery(-52,40, 10);
-    drawBalloonStall   (-36,18,180);
-    drawBalloonStall   (-48,18, 90);
+    drawRingTossStall  (-52,06,90);
+    //drawShootingGallery(-52,-15, 90);
+    // drawBalloonStall   (-36,18,180);
+    // drawBalloonStall   (-48,18, 90);
     drawLampPost(-32,20);drawLampPost(-57,22);drawLampPost(-48,50);
     drawBench(-32,24,0);drawBench(-52,50,90);
     drawTrashBin(-34,46,0.18f,0.68f,0.28f);drawTrashBin(-57,46,0.18f,0.68f,0.28f);
 
     /* ── BALLOON STALL near fountain plaza ── */
-    drawBalloonStall( 30,-10, 0);
-    drawBalloonStall(  0, 24, 90);
+    // drawBalloonStall( 30,-10, 0);
+    // drawBalloonStall(  0, 24, 90);
 
     /* ── FLOATING BALLOONS ── */
     float bC[][3]={{1,.10f,.10f},{.10f,.40f,1},{.92f,.86f,.05f},{.10f,.76f,.20f},{.86f,.20f,.86f}};
