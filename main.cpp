@@ -1729,75 +1729,157 @@ void drawShootingGallery(float cx,float cz,float ang){
     gluDeleteQuadric(q);glPopMatrix();
 }
 
-/* ─────────────────────────────
-   STAGE
-───────────────────────────── */
-void drawStage(float cx,float cz){
-    glPushMatrix();glTranslatef(cx,0,cz);
-    glRotatef(180,0,1,0);
-    GLUquadric*q=gluNewQuadric();
-    glColor3f(0.58f,0.32f,0.12f);
-    glPushMatrix();glTranslatef(0,.65f,0);glScalef(18.0f,1.3f,10.0f);glutSolidCube(1);glPopMatrix();
-    glColor3f(0.72f,0.44f,0.18f);
-    glPushMatrix();glTranslatef(0,1.32f,0);glScalef(18.2f,.12f,10.2f);glutSolidCube(1);glPopMatrix();
-    for(int s=0;s<4;s++){
-        glColor3f(0.65f+(s*.03f),0.38f+(s*.02f),0.15f);
-        glPushMatrix();glTranslatef(0,s*.38f+.19f,5.2f+s*.55f);
-        glScalef(10.0f,.38f,.55f);glutSolidCube(1);glPopMatrix();
-    }
-    glColor3f(0.62f,0.08f,0.58f);
-    glPushMatrix();glTranslatef(0,7.2f,-5.0f);glScalef(18.5f,12.5f,.5f);glutSolidCube(1);glPopMatrix();
-    for(int f=0;f<10;f++){
-        float fx=-8.5f+f*1.9f;
-        glColor3f(f%2==0?.52f:.72f,f%2==0?.05f:.12f,f%2==0?.48f:.68f);
-        glPushMatrix();glTranslatef(fx,7.2f,-4.78f);glScalef(.65f,12.2f,.28f);glutSolidCube(1);glPopMatrix();
-    }
-    for(int s=-1;s<=1;s+=2){
-        glColor3f(0.25f,0.25f,0.28f);
-        glPushMatrix();glTranslatef(s*10.0f,0,-3.5f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.25,.20,14.5f,12,1);glPopMatrix();
-        float spC[][3]={{1,0.4f,0},{0.4f,1,0},{0,0.4f,1},{1,0,0.4f}};
-        for(int l=0;l<4;l++){
-            glColor3f(spC[l][0],spC[l][1],spC[l][2]);
-            glPushMatrix();glTranslatef(s*10.0f,13.5f,-3.5f);
-            glRotatef(sinf(spotAngle*(float)M_PI/180+l*0.8f)*22,0,1,0);
-            glRotatef(-50,1,0,0);
-            gluCylinder(q,.22,.48,2.2f,8,1);glPopMatrix();
-        }
-    }
-    glColor3f(0.32f,0.32f,0.38f);
-    for(int s=-1;s<=1;s+=2){
-        glPushMatrix();glTranslatef(s*8.5f,0,-4.8f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.28,.24,16.0f,10,1);glPopMatrix();
-    }
-    glPushMatrix();glTranslatef(0,16.0f,-4.8f);glRotatef(90,0,1,0);
-    gluCylinder(q,.24,.24,17.2f,10,1);glPopMatrix();
-    for(int b=0;b<18;b++){
-        float bx=-8.2f+b*0.95f;
-        float sag=sinf((float)b/17*(float)M_PI)*(-0.7f);
-        float bc[][3]={{1,.1f,.1f},{1,.7f,.0f},{1,1,.0f},{.0f,.8f,.2f},{.0f,.4f,1},{.6f,.0f,.8f}};
-        glColor3f(bc[b%6][0],bc[b%6][1],bc[b%6][2]);
-        glBegin(GL_TRIANGLES);
-        glVertex3f(bx,15.8f+sag,-4.5f);
-        glVertex3f(bx+.48f,15.8f+sag,-4.5f);
-        glVertex3f(bx+.24f,14.9f+sag,-4.5f);
+void drawCircusTent(float cx, float cz) {
+    glPushMatrix();
+    glTranslatef(cx, 0.0f, cz);
+    GLUquadric* q = gluNewQuadric();
+ 
+    const int SEGS  = 48;
+    const float TR  = 11.5f;   /* tent base radius */
+    const float TH  = 9.5f;   /* tent height above base */
+    const float BR  = 12.2f;  /* base wall radius */
+    const float BH  = 2.8f;   /* cylindrical base wall height */
+ 
+    /* ── ground disc ── */
+    glColor3f(0.60f, 0.56f, 0.48f);
+    glPushMatrix();
+    glRotatef(-90, 1, 0, 0);
+    gluDisk(q, 0, BR + 0.5f, SEGS, 3);
+    glPopMatrix();
+ 
+    /* ── cylindrical base wall with red/white stripes ── */
+    for (int s = 0; s < SEGS; s++) {
+        float a0 = s       * 2.0f * (float)M_PI / SEGS;
+        float a1 = (s + 1) * 2.0f * (float)M_PI / SEGS;
+        glColor3f(s % 2 == 0 ? 0.90f : 0.98f,
+                  s % 2 == 0 ? 0.10f : 0.98f,
+                  s % 2 == 0 ? 0.10f : 0.98f);
+        glBegin(GL_QUADS);
+        glVertex3f(BR * cosf(a0), 0,   BR * sinf(a0));
+        glVertex3f(BR * cosf(a1), 0,   BR * sinf(a1));
+        glVertex3f(BR * cosf(a1), BH,  BR * sinf(a1));
+        glVertex3f(BR * cosf(a0), BH,  BR * sinf(a0));
         glEnd();
     }
-    glColor3f(0.18f,0.18f,0.18f);
-    glPushMatrix();glTranslatef(0,1.35f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,.05,.05,3.8f,8,1);glPopMatrix();
-    glColor3f(0.28f,0.28f,0.28f);
-    glPushMatrix();glTranslatef(0,5.18f,0);glutSolidSphere(.22f,10,10);glPopMatrix();
-    for(int s=-1;s<=1;s+=2){
-        glColor3f(0.12f,0.12f,0.15f);
-        glPushMatrix();glTranslatef(s*7.2f,1.35f,3.5f);glScalef(2.0f,3.0f,1.4f);glutSolidCube(1);glPopMatrix();
-        glColor3f(0.30f,0.30f,0.32f);
-        for(int r=0;r<3;r++){
-            glPushMatrix();glTranslatef(s*7.2f,2.0f+r*.8f,4.22f);
-            gluDisk(q,0,.55f,12,2);glPopMatrix();
-        }
+    /* base wall top ring */
+    glColor3f(0.80f, 0.72f, 0.20f);
+    glPushMatrix();
+    glTranslatef(0, BH, 0);
+    glRotatef(-90, 1, 0, 0);
+    gluCylinder(q, BR, BR, 0.22f, SEGS, 1);
+    glPopMatrix();
+ 
+    /* ── main conical tent roof with red/white panels ── */
+    const int PANELS = 20;
+    float panelC[2][3] = {{0.90f, 0.10f, 0.10f}, {0.98f, 0.98f, 0.98f}};
+    for (int p = 0; p < PANELS; p++) {
+        float a0 = p       * 2.0f * (float)M_PI / PANELS;
+        float a1 = (p + 1) * 2.0f * (float)M_PI / PANELS;
+        glColor3f(panelC[p % 2][0], panelC[p % 2][1], panelC[p % 2][2]);
+        /* triangular panel from rim to apex */
+        glBegin(GL_TRIANGLES);
+        glVertex3f(TR * cosf(a0), BH,          TR * sinf(a0));
+        glVertex3f(TR * cosf(a1), BH,          TR * sinf(a1));
+        glVertex3f(0,              BH + TH,     0);
+        glEnd();
+        /* inside face (back-face for interior peek) */
+        glColor3f(panelC[p % 2][0] * 0.62f,
+                  panelC[p % 2][1] * 0.62f,
+                  panelC[p % 2][2] * 0.62f);
+        glBegin(GL_TRIANGLES);
+        glVertex3f(TR * cosf(a1), BH,       TR * sinf(a1));
+        glVertex3f(TR * cosf(a0), BH,       TR * sinf(a0));
+        glVertex3f(0,              BH + TH,  0);
+        glEnd();
     }
-    gluDeleteQuadric(q);glPopMatrix();
+ 
+    /* ── outer valance (decorative skirt around base of cone) ── */
+    for (int p = 0; p < PANELS * 2; p++) {
+        float a0 = p       * 2.0f * (float)M_PI / (PANELS * 2);
+        float a1 = (p + 1) * 2.0f * (float)M_PI / (PANELS * 2);
+        glColor3f(p % 2 == 0 ? 0.90f : 0.98f,
+                  p % 2 == 0 ? 0.10f : 0.98f,
+                  p % 2 == 0 ? 0.10f : 0.98f);
+        float rInner = TR - 0.5f, rOuter = TR + 1.2f;
+        glBegin(GL_TRIANGLES);
+        glVertex3f(rInner * cosf(a0), BH,        rInner * sinf(a0));
+        glVertex3f(rInner * cosf(a1), BH,        rInner * sinf(a1));
+        glVertex3f(rOuter * cosf((a0+a1)*0.5f), BH - 1.0f, rOuter * sinf((a0+a1)*0.5f));
+        glEnd();
+    }
+ 
+    /* ── centre main pole (inside, pokes through apex) ── */
+    glColor3f(0.30f, 0.28f, 0.24f);
+    glPushMatrix();
+    glRotatef(-90, 1, 0, 0);
+    gluCylinder(q, 0.42f, 0.35f, BH + TH + 2.5f, 12, 2);
+    glPopMatrix();
+ 
+    /* ── 3 smaller outer poles ── */
+    for (int op = 0; op < 3; op++) {
+        float oa = op * 120.0f * (float)M_PI / 180.0f;
+        glColor3f(0.32f, 0.28f, 0.22f);
+        glPushMatrix();
+        glTranslatef(cosf(oa) * 7.5f, 0, sinf(oa) * 7.5f);
+        glRotatef(-90, 1, 0, 0);
+        gluCylinder(q, 0.28f, 0.22f, BH + 2.0f, 10, 1);
+        glPopMatrix();
+    }
+ 
+    /* ── golden star on apex ── */
+    glColor3f(0.95f, 0.85f, 0.10f);
+    glPushMatrix();
+    glTranslatef(0, BH + TH + 0.5f, 0);
+    glutSolidSphere(0.55f, 14, 14);
+    glPopMatrix();
+    /* apex ring of small balls */
+    for (int i = 0; i < 8; i++) {
+        float ba = i * 45.0f * (float)M_PI / 180.0f;
+        glColor3f(0.98f, 0.82f, 0.08f);
+        glPushMatrix();
+        glTranslatef(cosf(ba) * 0.80f, BH + TH + 0.5f, sinf(ba) * 0.80f);
+        glutSolidSphere(0.18f, 8, 8);
+        glPopMatrix();
+    }
+ 
+    
+  
+ 
+    /* ── pennant flags around perimeter ── */
+    extern float windTime;
+    float flagC[6][3] = {
+        {0.92f,0.18f,0.18f},{0.18f,0.52f,0.92f},{0.18f,0.82f,0.22f},
+        {0.92f,0.72f,0.10f},{0.82f,0.18f,0.82f},{0.92f,0.48f,0.10f}
+    };
+    const int FLAGS = 12;
+    for (int f = 0; f < FLAGS; f++) {
+        float fa  = f * 2.0f * (float)M_PI / FLAGS;
+        float fx  = cosf(fa) * (TR + 0.8f);
+        float fz  = sinf(fa) * (TR + 0.8f);
+        float sway = sinf(windTime * 1.5f + f * 0.8f) * 0.18f;
+        glColor3f(flagC[f % 6][0], flagC[f % 6][1], flagC[f % 6][2]);
+        glBegin(GL_TRIANGLES);
+        glVertex3f(fx,          BH + TH,      fz);
+        glVertex3f(fx + 0.55f + sway, BH + TH - 0.5f, fz);
+        glVertex3f(fx,          BH + TH - 0.9f, fz);
+        glEnd();
+        /* flag rope */
+        glDisable(GL_LIGHTING);
+        glColor3f(0.22f, 0.22f, 0.22f);
+        glLineWidth(1.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0,  BH + TH + 0.5f, 0);
+        glVertex3f(fx, BH + TH,        fz);
+        glEnd();
+        glEnable(GL_LIGHTING);
+    }
+ 
+    
+ 
+   
+ 
+    gluDeleteQuadric(q);
+    glPopMatrix();
 }
 void updateFountain(){
     waterTime+=0.03f;
@@ -2974,13 +3056,7 @@ void drawPeopleScene(){
     float gw=fmodf(walkTime*2,8)-4;
     drawPerson(-38+gw,28,0,0,.62f,.22f,.72f,2,walkTime*3.5f);
     drawPerson(-36,32,90,1,.28f,.82f,.28f,2,walkTime*4);
-    /* Stage crowd */
-    for(int cp=0;cp<8;cp++){
-        float cpx=-6+cp*1.8f, cpz=-48;
-        drawPerson(cpx,cpz,0,cp%2,
-            0.3f+(cp%3)*.2f, 0.4f+(cp%4)*.1f, 0.5f+(cp%2)*.3f,
-            3,walkTime*2+cp*.5f);
-    }
+    
 }
 
 /* ─────────────────────────────
@@ -3123,7 +3199,7 @@ for(int i=0;i<8;i++){
     drawTrashBin(-11,  5,0.68f,0.68f,0.68f);
 
     /* ── STAGE / EVENT AREA (north) ── */
-    drawStage(0, 42);
+    drawCircusTent(0, 42);
     drawLampPost(-14,28);drawLampPost(14,28);
     drawLampPost(-14,36);drawLampPost(14,36);
     drawBench(-16,24,0);drawBench(18,24,0);
@@ -3158,9 +3234,9 @@ for(int i=0;i<8;i++){
 
 
  /* 3 food stalls side by side */
-    drawPizzaStall(-52,-42, 90);    /* pizza — leftmost, facing east (+X) */
-    drawBurgerStall(-42,-42, 90);   /* burger — middle */
-    drawIceCreamStall(-32,-42, 90); /* ice cream — rightmost */
+    drawPizzaStall(-53,-54, 90);    /* pizza — leftmost, facing east (+X) */
+    drawBurgerStall(-43,-54, 90);   /* burger — middle */
+    drawIceCreamStall(-33,-54, 90); /* ice cream — rightmost */
 
     /* big dining tables in front of stalls */
     float dtc[][3]={{0.92f,0.22f,0.22f},{0.22f,0.52f,0.92f},{0.22f,0.78f,0.28f},
@@ -3168,7 +3244,7 @@ for(int i=0;i<8;i++){
                     {0.18f,0.72f,0.82f},{0.92f,0.28f,0.48f},{0.58f,0.82f,0.22f},
                     {0.88f,0.58f,0.10f},{0.28f,0.48f,0.88f},{0.88f,0.88f,0.18f}};
     for(int r=0;r<3;r++) for(int c=0;c<4;c++)
-        drawBigDiningTable(-54+c*7.0f,-28+r*7.0f,dtc[r*4+c][0],dtc[r*4+c][1],dtc[r*4+c][2]);
+        drawBigDiningTable(-54+c*7.0f,-42+r*7.0f,dtc[r*4+c][0],dtc[r*4+c][1],dtc[r*4+c][2]);
 
     drawLampPost(-54,-52);drawLampPost(-38,-52);drawLampPost(-24,-52);
     drawLampPost(-54,-18);drawLampPost(-38,-18);drawLampPost(-24,-18);
