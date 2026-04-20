@@ -690,147 +690,210 @@ void drawFunlandGate(float cx,float cz){
         }
     }
 
-    /* ── Arched beam connecting the two columns ── */
+    /* ── Pillar ground shadows (flat dark ellipses) ── */
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.0f,0.0f,0.0f,0.28f);
+    for(int s=-1;s<=1;s+=2){
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(s*gap, 0.06f, 0);
+        for(int i=0;i<=24;i++){
+            float a=i*2*(float)M_PI/24;
+            glVertex3f(s*gap+cosf(a)*2.2f, 0.06f, sinf(a)*1.2f);
+        }
+        glEnd();
+    }
+    glDisable(GL_BLEND); glEnable(GL_LIGHTING);
+
+    /* ── Arched beam (main horizontal) ── */
     glColor3f(0.90f,0.80f,0.55f);
     glPushMatrix();glTranslatef(0,ph+0.8f,0);glScalef(gap*2.0f,1.8f,2.0f);glutSolidCube(1);glPopMatrix();
+    /* Beam underside darker for depth */
+    glColor3f(0.70f,0.62f,0.38f);
+    glPushMatrix();glTranslatef(0,ph+0.8f-0.82f,0);glScalef(gap*2.0f,0.12f,2.0f);glutSolidCube(1);glPopMatrix();
 
-    /* Arch over the beam — rainbow segments */
+    /* ── Arch — thicker with front+back+side faces ── */
     float AR=gap+1.5f;
-    float AT=0.65f;
-    int AS=24;
+    float AT=0.72f;   /* thicker than before */
+    float AZ=0.9f;    /* half depth of arch */
+    int AS=28;
     float ac[][3]={{1,0,0},{1,.5f,0},{1,1,0},{0,.8f,0},{0,.5f,1},{.3f,0,1},{.8f,0,.8f}};
     for(int s=0;s<AS;s++){
         float a0=s*(float)M_PI/AS, a1=(s+1)*(float)M_PI/AS;
         glColor3f(ac[s%7][0],ac[s%7][1],ac[s%7][2]);
+        /* Front face */
         glBegin(GL_QUADS);
-        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0),-.4f);
-        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0),-.4f);
-        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1),-.4f);
-        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1),-.4f);
+        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0),-AZ);
+        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0),-AZ);
+        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1),-AZ);
+        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1),-AZ);
         glEnd();
+        /* Back face */
         glBegin(GL_QUADS);
-        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0),.4f);
-        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0),.4f);
-        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1),.4f);
-        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1),.4f);
+        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0),AZ);
+        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0),AZ);
+        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1),AZ);
+        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1),AZ);
+        glEnd();
+        /* Outer rim (connects front/back outer edge) */
+        glColor3f(ac[s%7][0]*0.75f,ac[s%7][1]*0.75f,ac[s%7][2]*0.75f);
+        glBegin(GL_QUADS);
+        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0),-AZ);
+        glVertex3f(AR*cosf(a0),ph+0.8f+AR*sinf(a0), AZ);
+        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1), AZ);
+        glVertex3f(AR*cosf(a1),ph+0.8f+AR*sinf(a1),-AZ);
+        glEnd();
+        /* Inner rim */
+        glBegin(GL_QUADS);
+        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0),-AZ);
+        glVertex3f((AR-AT)*cosf(a0),ph+0.8f+(AR-AT)*sinf(a0), AZ);
+        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1), AZ);
+        glVertex3f((AR-AT)*cosf(a1),ph+0.8f+(AR-AT)*sinf(a1),-AZ);
         glEnd();
     }
 
-    /* ── "FUNLAND" sign board on beam ── */
+    /* ── Hanging string lights between the two pillars ── */
+    /* Two strands at slightly different heights */
+    for(int strand=0;strand<2;strand++){
+        float hy=ph*0.55f + strand*1.8f;  /* heights of the two strands */
+        int NB=14;                          /* number of bulbs per strand */
+        float bulbC[][3]={{1,0.2f,0.2f},{1,0.9f,0.1f},{0.2f,0.8f,0.2f},{0.2f,0.5f,1},{1,0.2f,0.8f}};
+        glDisable(GL_LIGHTING);
+        glColor3f(0.22f,0.22f,0.22f);
+        glBegin(GL_LINE_STRIP);
+        for(int i=0;i<=NB;i++){
+            float t=(float)i/NB;
+            float sag=-sinf(t*(float)M_PI)*2.5f;
+            glVertex3f(-gap+1.0f+t*(gap*2-2), hy+sag, strand==0?-0.5f:0.5f);
+        }
+        glEnd();
+        glEnable(GL_LIGHTING);
+        for(int i=0;i<=NB;i++){
+            float t=(float)i/NB;
+            float sag=-sinf(t*(float)M_PI)*2.5f;
+            int ci=i%5;
+            glColor3f(bulbC[ci][0],bulbC[ci][1],bulbC[ci][2]);
+            glPushMatrix();
+            glTranslatef(-gap+1.0f+t*(gap*2-2), hy+sag, strand==0?-0.5f:0.5f);
+            glutSolidSphere(0.22f,6,6);
+            glPopMatrix();
+        }
+    }
+
+    /* ── "FUNLAND" sign board on beam — faces OUTWARD (south, negative Z) ── */
     /* Background board */
     glColor3f(0.08f,0.06f,0.28f);
-    glPushMatrix();glTranslatef(0,ph+0.8f+4.8f,0.1f);glScalef(14.5f,3.2f,0.4f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,ph+0.8f+4.8f,-0.1f);glScalef(14.5f,3.2f,0.4f);glutSolidCube(1);glPopMatrix();
 
     /* Colored inner panel */
     glColor3f(0.12f,0.08f,0.45f);
-    glPushMatrix();glTranslatef(0,ph+0.8f+4.8f,0.35f);glScalef(13.8f,2.6f,0.15f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,ph+0.8f+4.8f,-0.35f);glScalef(13.8f,2.6f,0.15f);glutSolidCube(1);glPopMatrix();
 
     /* Gold border top/bottom */
     glColor3f(1.0f,0.85f,0.10f);
-    glPushMatrix();glTranslatef(0,ph+0.8f+6.3f,0.35f);glScalef(14.2f,0.32f,0.18f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,ph+0.8f+3.3f,0.35f);glScalef(14.2f,0.32f,0.18f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,ph+0.8f+6.3f,-0.35f);glScalef(14.2f,0.32f,0.18f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,ph+0.8f+3.3f,-0.35f);glScalef(14.2f,0.32f,0.18f);glutSolidCube(1);glPopMatrix();
 
-    /* Letter F */
+    /* Letter F  (mirrored X for correct reading from outside) */
     glColor3f(1.0f,0.92f,0.12f);
-    glPushMatrix();glTranslatef(-5.8f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(5.8f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.38f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(-5.22f,ph+0.8f+5.7f,0.45f);
+    glPushMatrix();glTranslatef(5.22f,ph+0.8f+5.7f,-0.45f);
     glScalef(0.75f,0.32f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(-5.32f,ph+0.8f+4.9f,0.45f);
+    glPushMatrix();glTranslatef(5.32f,ph+0.8f+4.9f,-0.45f);
     glScalef(0.55f,0.30f,0.12f);glutSolidCube(1);glPopMatrix();
 
     /* Letter U */
     glColor3f(1.0f,0.40f,0.10f);
-    glPushMatrix();glTranslatef(-4.0f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(4.0f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(-3.2f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(3.2f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(-3.6f,ph+0.8f+3.85f,0.45f);
+    glPushMatrix();glTranslatef(3.6f,ph+0.8f+3.85f,-0.45f);
     glScalef(1.1f,0.30f,0.12f);glutSolidCube(1);glPopMatrix();
 
     /* Letter N */
     glColor3f(0.18f,0.88f,0.28f);
-    glPushMatrix();glTranslatef(-2.15f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(2.15f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(-1.35f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(1.35f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
     glBegin(GL_TRIANGLES);
-    glVertex3f(-2.15f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(-1.35f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(-2.15f,ph+0.8f+3.82f,0.47f);
+    glVertex3f(2.15f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(1.35f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(2.15f,ph+0.8f+3.82f,-0.47f);
     glEnd();
 
     /* Letter L */
     glColor3f(0.18f,0.62f,1.0f);
-    glPushMatrix();glTranslatef(-0.35f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(0.35f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(0.15f,ph+0.8f+3.85f,0.45f);
+    glPushMatrix();glTranslatef(-0.15f,ph+0.8f+3.85f,-0.45f);
     glScalef(1.32f,0.30f,0.12f);glutSolidCube(1);glPopMatrix();
 
     /* Letter A */
     glColor3f(0.82f,0.18f,0.88f);
-    glPushMatrix();glTranslatef(1.05f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(-1.05f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(1.85f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(-1.85f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
     /* A crossbar */
-    glPushMatrix();glTranslatef(1.45f,ph+0.8f+4.9f,0.45f);
+    glPushMatrix();glTranslatef(-1.45f,ph+0.8f+4.9f,-0.45f);
     glScalef(1.1f,0.28f,0.12f);glutSolidCube(1);glPopMatrix();
     /* A top */
     glBegin(GL_TRIANGLES);
-    glVertex3f(1.05f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(1.85f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(1.45f,ph+0.8f+6.6f,0.47f);
+    glVertex3f(-1.05f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(-1.85f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(-1.45f,ph+0.8f+6.6f,-0.47f);
     glEnd();
 
     /* Letter N (second) */
     glColor3f(1.0f,0.62f,0.08f);
-    glPushMatrix();glTranslatef(2.85f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(-2.85f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(3.65f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(-3.65f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
     glBegin(GL_TRIANGLES);
-    glVertex3f(2.85f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(3.65f,ph+0.8f+5.82f,0.47f);
-    glVertex3f(2.85f,ph+0.8f+3.82f,0.47f);
+    glVertex3f(-2.85f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(-3.65f,ph+0.8f+5.82f,-0.47f);
+    glVertex3f(-2.85f,ph+0.8f+3.82f,-0.47f);
     glEnd();
 
     /* Letter D */
     glColor3f(0.92f,0.10f,0.28f);
-    glPushMatrix();glTranslatef(4.65f,ph+0.8f+4.8f,0.45f);
+    glPushMatrix();glTranslatef(-4.65f,ph+0.8f+4.8f,-0.45f);
     glScalef(0.32f,2.0f,0.12f);glutSolidCube(1);glPopMatrix();
     /* D arc */
     for(int i=0;i<8;i++){
         float a0=i*180.f/8*(float)M_PI/180 - (float)M_PI/2;
         float a1=(i+1)*180.f/8*(float)M_PI/180 - (float)M_PI/2;
         glBegin(GL_QUADS);
-        glVertex3f(4.65f+cosf(a0)*0.85f,ph+0.8f+4.8f+sinf(a0)*1.05f,0.47f);
-        glVertex3f(4.65f+cosf(a0)*0.55f,ph+0.8f+4.8f+sinf(a0)*0.75f,0.47f);
-        glVertex3f(4.65f+cosf(a1)*0.55f,ph+0.8f+4.8f+sinf(a1)*0.75f,0.47f);
-        glVertex3f(4.65f+cosf(a1)*0.85f,ph+0.8f+4.8f+sinf(a1)*1.05f,0.47f);
+        glVertex3f(-4.65f+cosf(a0)*0.85f,ph+0.8f+4.8f+sinf(a0)*1.05f,-0.47f);
+        glVertex3f(-4.65f+cosf(a0)*0.55f,ph+0.8f+4.8f+sinf(a0)*0.75f,-0.47f);
+        glVertex3f(-4.65f+cosf(a1)*0.55f,ph+0.8f+4.8f+sinf(a1)*0.75f,-0.47f);
+        glVertex3f(-4.65f+cosf(a1)*0.85f,ph+0.8f+4.8f+sinf(a1)*1.05f,-0.47f);
         glEnd();
     }
 
-    /* Star decorations around sign */
+    /* Star decorations around sign — outward face */
     float starC[][3]={{1,1,0},{1,0.5f,0},{0.5f,1,0},{0,0.8f,1},{1,0.2f,0.8f}};
     for(int st=0;st<8;st++){
         glColor3f(starC[st%5][0],starC[st%5][1],starC[st%5][2]);
         float sx=-6.2f+st*1.8f;
         float sy=ph+0.8f+6.8f+sinf(windTime*2+st)*0.25f;
-        glPushMatrix();glTranslatef(sx,sy,0.48f);glutSolidSphere(0.22f,8,8);glPopMatrix();
+        glPushMatrix();glTranslatef(sx,sy,-0.48f);glutSolidSphere(0.22f,8,8);glPopMatrix();
     }
 
-    /* Bulb lights across beam bottom */
+    /* Bulb lights across beam bottom — outward face */
     for(int b=0;b<16;b++){
         float bx=-7.2f+b*0.96f;
         glColor3f(1,1,0.6f);
-        glPushMatrix();glTranslatef(bx,ph+0.8f-0.12f,0.6f);glutSolidSphere(0.18f,6,6);glPopMatrix();
-        /* wire */
+        glPushMatrix();glTranslatef(bx,ph+0.8f-0.12f,-0.6f);glutSolidSphere(0.18f,6,6);glPopMatrix();
         glDisable(GL_LIGHTING);
         glColor3f(0.3f,0.3f,0.3f);
         glBegin(GL_LINES);
-        glVertex3f(bx,ph+0.8f,0.6f);
-        glVertex3f(bx,ph+0.8f-0.12f,0.6f);
+        glVertex3f(bx,ph+0.8f,-0.6f);
+        glVertex3f(bx,ph+0.8f-0.12f,-0.6f);
         glEnd();
         glEnable(GL_LIGHTING);
     }
@@ -872,8 +935,38 @@ void drawTicketBooth(float cx,float cz,float ry){
     glEnd();
     glColor3f(.82f,.94f,1.0f);
     glPushMatrix();glTranslatef(0,2.0f,1.12f);glScalef(1.3f,.9f,.06f);glutSolidCube(1);glPopMatrix();
-    glColor3f(1,.85f,.05f);
-    glPushMatrix();glTranslatef(0,3.1f,1.13f);glScalef(2.2f,.55f,.05f);glutSolidCube(1);glPopMatrix();
+    /* TICKETS sign board above window */
+    glColor3f(0.08f,0.06f,0.28f);
+    glPushMatrix();glTranslatef(0,3.4f,1.15f);glScalef(2.6f,0.75f,.08f);glutSolidCube(1);glPopMatrix();
+    glColor3f(1.0f,0.90f,0.10f);
+    glPushMatrix();glTranslatef(0,3.4f,1.2f);glScalef(2.3f,0.50f,.04f);glutSolidCube(1);glPopMatrix();
+    /* T letter */
+    glColor3f(0.08f,0.06f,0.28f);
+    glPushMatrix();glTranslatef(-0.92f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(-0.92f,3.6f,1.22f);glScalef(0.28f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    /* I */
+    glPushMatrix();glTranslatef(-0.62f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    /* C */
+    glPushMatrix();glTranslatef(-0.32f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(-0.20f,3.6f,1.22f);glScalef(0.16f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(-0.20f,3.22f,1.22f);glScalef(0.16f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    /* K */
+    glPushMatrix();glTranslatef(0.02f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    glBegin(GL_TRIANGLES);
+    glVertex3f(0.05f,3.6f,1.24f);glVertex3f(0.28f,3.68f,1.24f);glVertex3f(0.05f,3.41f,1.24f);
+    glVertex3f(0.05f,3.41f,1.24f);glVertex3f(0.28f,3.22f,1.24f);glVertex3f(0.05f,3.22f,1.24f);
+    glEnd();
+    /* E */
+    glPushMatrix();glTranslatef(0.36f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.48f,3.6f,1.22f);glScalef(0.18f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.48f,3.41f,1.22f);glScalef(0.14f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.48f,3.22f,1.22f);glScalef(0.18f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    /* T (second, as S substitute) */
+    glPushMatrix();glTranslatef(0.72f,3.4f,1.22f);glScalef(0.06f,0.38f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.72f,3.6f,1.22f);glScalef(0.28f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.72f,3.41f,1.22f);glScalef(0.18f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    glPushMatrix();glTranslatef(0.84f,3.22f,1.22f);glScalef(0.16f,0.06f,.04f);glutSolidCube(1);glPopMatrix();
+    /* slide-out counter */
     glColor3f(.52f,.30f,.10f);
     glPushMatrix();glTranslatef(0,1.55f,1.38f);glScalef(1.8f,.14f,.55f);glutSolidCube(1);glPopMatrix();
     float bc[][3]={{1,.18f,.18f},{.18f,.5f,1},{1,.85f,.05f}};
@@ -1773,6 +1866,7 @@ void drawPerson(float x,float z,float face,int type,
    PEOPLE SCENE
 ───────────────────────────── */
 void drawPeopleScene(){
+    /* People only in zones — NOT in the entry corridor (Z < -35) */
     drawPerson(-17.5f,-5.5f,85,0,.85f,.28f,.58f,1,0);
     drawPerson(-15.8f,-5.8f,100,0,.20f,.34f,.76f,0,0);
     float k1a=walkTime*1.8f;
@@ -1782,7 +1876,8 @@ void drawPeopleScene(){
     float k3x=-12.5f+sinf(walkTime*1.2f)*.4f;
     drawPerson(k3x,-2.5f,185,1,.88f,.88f,.16f,2,walkTime*3.5f);
     drawPerson(k3x+1.5f,-2.5f,175,1,.26f,.68f,.92f,2,walkTime*3.5f+1);
-    float cz2=fmodf(walkTime*3.5f,60)-40;
+    /* walking person on boulevard — only visible after roundabout */
+    float cz2=fmodf(walkTime*3.5f,40)-20;
     drawPerson(-1.5f,cz2,0,0,.36f,.20f,.62f,2,walkTime*3);
     drawPerson(1.5f,cz2,0,0,.86f,.46f,.20f,2,walkTime*3+.5f);
     drawPerson(31,-8.5f,185,0,.50f,.26f,.68f,0,0);
@@ -1796,7 +1891,7 @@ void drawPeopleScene(){
     drawPerson(-36,32,90,1,.28f,.82f,.28f,2,walkTime*4);
     /* Stage crowd */
     for(int cp=0;cp<8;cp++){
-        float cpx=-6+cp*1.8f, cpz=-48;
+        float cpx=-6+cp*1.8f, cpz=-46;
         drawPerson(cpx,cpz,0,cp%2,
             0.3f+(cp%3)*.2f, 0.4f+(cp%4)*.1f, 0.5f+(cp%2)*.3f,
             3,walkTime*2+cp*.5f);
@@ -1846,9 +1941,9 @@ void display(){
        No roads go into ride/stall structures.
     ══ */
 
-    /* 1. Main N-S boulevard — split to leave roundabout gap */
-    drawRoadSegment(-3,-65, -3,-16,  6); /* south half → roundabout south */
-    drawRoadSegment(-3, 16, -3, 42,  6); /* north half → stage */
+    /* 1. Main N-S boulevard — plain paved pathway, no dashes */
+    drawPathway(-3,-65, -3,-16,  8.0f); /* south half → roundabout south */
+    drawPathway(-3, 16, -3, 42,  8.0f); /* north half → stage */
 
     /* 2. E-W connector at Z=-22 (inner ring) */
     drawRoadSegment(-62,-22, -8,-22,  5); /* west arm */
@@ -1889,35 +1984,42 @@ void display(){
     /* West */
     drawPathway(-9.5f, 0, -16, 0, 6);
 
-    /* ── DECORATIVE WALKWAYS (pedestrian paths) ── */
-    drawPathway(-8,-62,  8,-62, 10.0f); /* Entry plaza at gate */
-    drawPathway(-8,-65,  8,-55, 11.0f); /* Gate approach */
+    /* ── ENTRY PLAZA PATHWAY (clean, no road markings) ── */
+    drawPathway(-8,-65,  8,-55, 12.0f); /* wide gate approach paving */
+    drawPathway(-7,-55,  7,-16,  9.0f); /* main entry boulevard paving */
 
-    /* ── PERIMETER TREES (inside wall) ── */
+    /* ── PERIMETER TREES (inside wall, around edges only) ── */
     float T=61;
+    /* East & West perimeter trees — full length */
     for(int i=-5;i<=5;i++){
-        if(abs(i)>1 || i!=0){ /* skip near gate south side */
-            drawTree(-T,i*11);drawTree(T,i*11);
-        }
-        drawTree(i*11,-T);drawTree(i*11,T);
+        drawTree(-T,i*11);
+        drawTree( T,i*11);
     }
-    /* Boulevard trees flanking main N-S path */
+    /* North & South perimeter trees — skip south gate area entirely (X=-15..+15) */
+    for(int i=-5;i<=5;i++){
+        float tx=i*11.0f;
+        if(fabsf(tx)>16.0f){          /* skip the gate corridor width */
+            drawTree(tx,-T);
+        }
+        drawTree(tx, T);              /* north side all ok */
+    }
+    /* Boulevard trees flanking main N-S path — ONLY from Z=-15 northward */
     for(int i=0;i<10;i++){
         float tz=-62+i*10.5f;
-        if(tz<-17 || tz>17){ /* skip roundabout area */
+        /* Only draw if north of entry zone AND not in roundabout zone */
+        if(tz > -14 && (tz < -17 || tz > 17)){
             drawTree(-8.5f,tz,1.1f);
             drawTree( 5.5f,tz,1.1f);
         }
     }
-    /* Trees around roundabout island and plaza */
+    /* Trees around roundabout plaza (placed OUTSIDE the roundabout ring, not blocking) */
     for(int i=0;i<8;i++){
         float ta=i*45*(float)M_PI/180+22.5f*(float)M_PI/180;
-        drawTree(cosf(ta)*19.5f,sinf(ta)*19.5f,0.95f);
+        drawTree(cosf(ta)*21.5f,sinf(ta)*21.5f,0.95f);
     }
-    /* Interior zone dividers */
+    /* Zone divider trees — east side only, west side removed to not block food court view */
     for(int i=-2;i<=2;i++){
-        drawTree(-24,i*10,0.85f);
-        drawTree( 24,i*10,0.85f);
+        drawTree( 26,i*10,0.85f);  /* east divider only */
     }
     /* Palm trees in food court */
     drawPalmTree(-50,-44);drawPalmTree(-35,-40);drawPalmTree(-50,-25);drawPalmTree(-38,-20);
@@ -1925,13 +2027,8 @@ void display(){
     /* ── FUNLAND ENTRANCE GATE ── */
     drawFunlandGate(0,-65);
 
-    /* Queue barriers / ticket zone near gate */
-    drawTicketBooth( 16,-56,180);
-    drawTicketBooth(-16,-56,180);
-    for(int q2=0;q2<4;q2++){
-        drawQueueBarrier(-10,-48-q2*2.5f,0);
-        drawQueueBarrier( 10,-48-q2*2.5f,0);
-    }
+    /* ── TICKET BOOTH — single centered booth with TICKETS heading ── */
+    drawTicketBooth(0,-54,180);
     drawLampPost(-14,-58);drawLampPost( 14,-58);
     drawLampPost( -8,-47);drawLampPost(  8,-47);
     drawBench(-18,-50,90);drawBench( 18,-50,90);
@@ -2104,6 +2201,17 @@ void init(){
     glEnable(GL_LINE_SMOOTH);
     glEnable(GL_NORMALIZE);
     setupLighting();
+
+    /* ── ATMOSPHERIC FOG (depth effect — far = lighter/hazy) ── */
+    glEnable(GL_FOG);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+    /* Fog color matches sky horizon (light blue-grey) */
+    GLfloat fogCol[] = {0.62f, 0.78f, 0.92f, 1.0f};
+    glFogfv(GL_FOG_COLOR, fogCol);
+    glFogf(GL_FOG_START,  55.0f);   /* starts fading at ~55 units away */
+    glFogf(GL_FOG_END,   190.0f);   /* fully hazy at 190 units */
+    glHint(GL_FOG_HINT, GL_NICEST);
+
     int tw,th;
     unsigned char*td=loadBMP("grass.bmp",&tw,&th);
     if(td){
