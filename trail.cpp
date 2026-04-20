@@ -1,21 +1,4 @@
-/*  ============================================================
-    FUNLAND 3D  —  FINAL VERSION
-    - Giant Ferris Wheel centered in its zone with LED lights
-    - Premium entrance gate (one big ticket booth, left side)
-    - Grass-only entry path (no white paving plates)
-    - Food Court: pizza + burger + ice-cream stalls clustered,
-      each with a 3D vendor figure behind counter
-    - Large dining tables with chairs + coloured umbrellas
-    - Boundary wall replacing fence
-    - Roundabout at centre
-    - Grand 3-tier fountain at centre
-    - Stage (north, faces south toward gate)
-    - Roller coaster (NW)
-    - Merry-go-round (east area)
-    - Parking lot (SE)
-    Controls:
-      Arrow / drag = orbit    +/- = zoom    W/R/C = toggle rides
-    ============================================================ */
+
 
 #define GL_SILENCE_DEPRECATION
 #ifdef __APPLE__
@@ -40,18 +23,37 @@ GLuint groundTex=0;
 /* ═══════════════════════════════════════════════════
    BMP LOADER  (for grass.bmp, can also load food BMPs)
 ═══════════════════════════════════════════════════ */
-unsigned char* loadBMP(const char* fn,int*w,int*h){
-    FILE*f=fopen(fn,"rb");
-    if(!f){printf("BMP not found: %s\n",fn);return nullptr;}
-    unsigned char hdr[54]; fread(hdr,1,54,f);
-    *w=*(int*)&hdr[18]; *h=*(int*)&hdr[22];
-    int row=(*w*3+3)&~3;
-    unsigned char*raw=new unsigned char[row*(*h)];
-    fread(raw,1,row*(*h),f); fclose(f);
-    unsigned char*out=new unsigned char[(*w)*(*h)*3];
-    for(int i=0;i<*h;i++) for(int j=0;j<*w;j++) for(int k=0;k<3;k++)
-        out[(i*(*w)+j)*3+k]=raw[i*row+j*3+(2-k)];
-    delete[]raw; return out;
+unsigned char* loadBMP(const char* fn,int* w,int* h){
+    FILE* f = fopen(fn,"rb");
+    if(!f){
+        printf("BMP not found: %s\n",fn);
+        return nullptr;
+    }
+
+    unsigned char hdr[54];
+    fread(hdr,1,54,f);
+
+    *w = *(int*)&hdr[18];
+    *h = *(int*)&hdr[22];
+
+    int row_padded = ((*w * 3 + 3) & (~3));
+    unsigned char* data = new unsigned char[row_padded * (*h)];
+    fread(data,1,row_padded * (*h),f);
+    fclose(f);
+
+    unsigned char* finalData = new unsigned char[(*w)*(*h)*3];
+
+    for(int i=0;i<*h;i++){
+        for(int j=0;j<*w;j++){
+            for(int k=0;k<3;k++){
+                finalData[(((*h-1-i)*(*w)+j)*3)+k] =
+                    data[i*row_padded + j*3 + (2-k)];
+            }
+        }
+    }
+
+    delete[] data;
+    return finalData;
 }
 
 GLuint createTexture(const char* file){
@@ -63,6 +65,8 @@ GLuint createTexture(const char* file){
     glGenTextures(1,&tex);
     glBindTexture(GL_TEXTURE_2D,tex);
 
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,data);
 
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -73,6 +77,12 @@ GLuint createTexture(const char* file){
 }
 
 GLuint pizzaTex;
+GLuint burgerTex;
+GLuint iceTex;
+GLuint waterTex;
+
+float waterTime = 0.0f;
+
 
 /* ─── GLUT bitmap string helper ─── */
 void draw3DString(float x,float y,float z,const char* s,void* font=GLUT_BITMAP_HELVETICA_18){
@@ -541,120 +551,339 @@ void drawTicketBooth(float cx,float cz,float ry){
 
     gluDeleteQuadric(q);glPopMatrix();
 }
-/* ═══════════════════════════════════════════════════════
-   GRAND FOUNTAIN  (3-tier, big, centre plaza)
-═══════════════════════════════════════════════════════ */
-void drawFountain(float cx,float cz){
-    glPushMatrix();glTranslatef(cx,0,cz);
-    GLUquadric*q=gluNewQuadric();
-    /* outer basin */
-    glColor3f(0.68f,0.72f,0.80f);
-    glPushMatrix();glRotatef(-90,1,0,0);gluDisk(q,0,7.2f,32,4);glPopMatrix();
-    glPushMatrix();glRotatef(-90,1,0,0);gluCylinder(q,7.2f,7.2f,.9f,32,1);glPopMatrix();
-    glColor3f(0.78f,0.82f,0.90f);
-    glPushMatrix();glTranslatef(0,.92f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,7.2f,7.6f,.32f,32,1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,1.24f,0);glRotatef(-90,1,0,0);gluDisk(q,6.8f,7.6f,32,2);glPopMatrix();
-    glColor3f(0.32f,0.60f,0.90f);
-    glPushMatrix();glTranslatef(0,.78f,0);glRotatef(-90,1,0,0);gluDisk(q,0,6.8f,32,4);glPopMatrix();
-    /* outer basin wall decorative border stones */
-    for(int s=0;s<20;s++){float sa=s*18*(float)M_PI/180;
-        glColor3f(0.70f,0.72f,0.78f);
-        glPushMatrix();glTranslatef(cosf(sa)*7.95f,0.05f,sinf(sa)*7.95f);
-        glScalef(.60f,.40f,.60f);glutSolidSphere(1,8,8);glPopMatrix();}
-    /* center pillar tier 1 */
-    glColor3f(0.80f,0.82f,0.90f);
-    glPushMatrix();glRotatef(-90,1,0,0);gluCylinder(q,.75f,.60f,4.0f,18,2);glPopMatrix();
-    glColor3f(0.90f,0.84f,0.62f);
-    glPushMatrix();glTranslatef(0,.42f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,1.15f,1.05f,.36f,18,1);glPopMatrix();
-    /* middle basin */
-    glColor3f(0.72f,0.76f,0.84f);
-    glPushMatrix();glTranslatef(0,4.0f,0);glRotatef(-90,1,0,0);
-    gluDisk(q,0,4.4f,24,3);glPopMatrix();
-    glPushMatrix();glTranslatef(0,4.0f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,4.4f,4.4f,.60f,24,1);glPopMatrix();
-    glColor3f(0.80f,0.84f,0.92f);
-    glPushMatrix();glTranslatef(0,4.62f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,4.4f,4.75f,.24f,24,1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,4.86f,0);glRotatef(-90,1,0,0);gluDisk(q,4.1f,4.75f,24,2);glPopMatrix();
-    glColor3f(0.35f,0.62f,0.92f);
-    glPushMatrix();glTranslatef(0,4.55f,0);glRotatef(-90,1,0,0);gluDisk(q,0,4.1f,24,3);glPopMatrix();
-    /* pillar tier 2 */
-    glColor3f(0.80f,0.82f,0.90f);
-    glPushMatrix();glTranslatef(0,4.0f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,.52f,.40f,3.6f,14,2);glPopMatrix();
-    /* top basin */
-    glColor3f(0.76f,0.80f,0.88f);
-    glPushMatrix();glTranslatef(0,7.6f,0);glRotatef(-90,1,0,0);
-    gluDisk(q,0,2.2f,20,3);glPopMatrix();
-    glPushMatrix();glTranslatef(0,7.6f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,2.2f,2.2f,.45f,20,1);glPopMatrix();
-    glColor3f(0.82f,0.86f,0.94f);
-    glPushMatrix();glTranslatef(0,8.07f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,2.2f,2.5f,.20f,20,1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,8.27f,0);glRotatef(-90,1,0,0);gluDisk(q,2.0f,2.5f,20,2);glPopMatrix();
-    glColor3f(0.38f,0.65f,0.95f);
-    glPushMatrix();glTranslatef(0,8.0f,0);glRotatef(-90,1,0,0);gluDisk(q,0,2.0f,20,3);glPopMatrix();
-    /* golden ornament spire */
-    glColor3f(0.92f,0.80f,0.15f);
-    glPushMatrix();glTranslatef(0,7.6f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,.20f,.12f,3.2f,10,1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,10.84f,0);glutSolidSphere(.48f,16,16);glPopMatrix();
-    for(int t=0;t<6;t++){float ta=t*60*(float)M_PI/180;
-        glColor3f(1.0f,0.90f,0.18f);
-        glPushMatrix();glTranslatef(cosf(ta)*.62f,10.84f,sinf(ta)*.62f);
-        glutSolidSphere(.18f,8,8);glPopMatrix();}
-    /* ── water jets ── */
-    glEnable(GL_BLEND);glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    /* outer ring */
-    for(int j=0;j<14;j++){
-        float ja=j*360.f/14*(float)M_PI/180;
-        float jph=fountainTime*1.2f+j*.45f,jh=sinf(jph)*0.65f+2.5f;
-        for(int s=0;s<10;s++){float t=(float)s/10,t1=(float)(s+1)/10;
-            float arc=jh*(1-(2*t-1)*(2*t-1)),arc1=jh*(1-(2*t1-1)*(2*t1-1));
-            float r0=6.0f+t*1.5f,r1=6.0f+t1*1.5f;
-            glColor4f(0.55f,0.82f,1.0f,0.55f);
-            glBegin(GL_QUADS);
-            glVertex3f(cosf(ja)*(r0-.08f),0.80f+arc,sinf(ja)*(r0-.08f));
-            glVertex3f(cosf(ja)*(r0+.08f),0.80f+arc,sinf(ja)*(r0+.08f));
-            glVertex3f(cosf(ja)*(r1+.08f),0.80f+arc1,sinf(ja)*(r1+.08f));
-            glVertex3f(cosf(ja)*(r1-.08f),0.80f+arc1,sinf(ja)*(r1-.08f));
-            glEnd();}
+
+/* ══════════════════════════════════════════════
+   WATER SURFACE  — flat horizontal textured disc
+   Must be called inside a glPushMatrix block
+   that is already translated to the water height
+   ══════════════════════════════════════════════ */
+void drawWaterCircle(float radius) {
+    extern GLuint waterTex;
+    extern float  waterTime;
+
+    /* flat rotation — CRITICAL: discs must face up */
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+
+    if (waterTex) {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, waterTex);
     }
-    /* mid ring */
-    for(int j=0;j<9;j++){
-        float ja=j*40*(float)M_PI/180;
-        float jph=fountainTime+j*.8f,jh=sinf(jph)*0.5f+3.2f;
-        for(int s=0;s<12;s++){float t=(float)s/12,t1=(float)(s+1)/12;
-            float arc=jh*(1-(2*t-1)*(2*t-1)),arc1=jh*(1-(2*t1-1)*(2*t1-1));
-            float r0=3.4f+t*1.1f,r1=3.4f+t1*1.1f;
-            glColor4f(0.60f,0.86f,1.0f,0.65f);
-            glBegin(GL_QUADS);
-            glVertex3f(cosf(ja)*(r0-.06f),4.58f+arc,sinf(ja)*(r0-.06f));
-            glVertex3f(cosf(ja)*(r0+.06f),4.58f+arc,sinf(ja)*(r0+.06f));
-            glVertex3f(cosf(ja)*(r1+.06f),4.58f+arc1,sinf(ja)*(r1+.06f));
-            glVertex3f(cosf(ja)*(r1-.06f),4.58f+arc1,sinf(ja)*(r1-.06f));
-            glEnd();}
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.35f, 0.72f, 0.95f, 0.82f);   /* nice blue, semi-transparent */
+
+    float t = waterTime;
+
+    /* centre vertex */
+    glBegin(GL_TRIANGLE_FAN);
+    glTexCoord2f(0.5f + t * 0.08f, 0.5f + t * 0.08f);
+    glVertex3f(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i <= 360; i += 4) {
+        float ang = i * (float)M_PI / 180.0f;
+        float x   = cosf(ang) * radius;
+        float y   = sinf(ang) * radius;
+        /* subtle ripple on UV only — keep geometry flat */
+        float u   = (x / radius) * 0.5f + 0.5f + t * 0.06f;
+        float v   = (y / radius) * 0.5f + 0.5f + t * 0.04f;
+        glTexCoord2f(u, v);
+        glVertex3f(x, y, 0.0f);
     }
-    /* top jets */
-    for(int j=0;j<6;j++){
-        float ja=j*60*(float)M_PI/180;
-        float jph=fountainTime*1.4f+j*1.05f,jh=sinf(jph)*0.4f+2.4f;
-        for(int s=0;s<10;s++){float t=(float)s/10,t1=(float)(s+1)/10;
-            float arc=jh*(1-(2*t-1)*(2*t-1)),arc1=jh*(1-(2*t1-1)*(2*t1-1));
-            float r0=1.3f+t*.85f,r1=1.3f+t1*.85f;
-            glColor4f(0.68f,0.90f,1.0f,0.72f);
-            glBegin(GL_QUADS);
-            glVertex3f(cosf(ja)*(r0-.05f),8.02f+arc,sinf(ja)*(r0-.05f));
-            glVertex3f(cosf(ja)*(r0+.05f),8.02f+arc,sinf(ja)*(r0+.05f));
-            glVertex3f(cosf(ja)*(r1+.05f),8.02f+arc1,sinf(ja)*(r1+.05f));
-            glVertex3f(cosf(ja)*(r1-.05f),8.02f+arc1,sinf(ja)*(r1-.05f));
-            glEnd();}
-    }
+    glEnd();
+
     glDisable(GL_BLEND);
-    gluDeleteQuadric(q);glPopMatrix();
+    if (waterTex) glDisable(GL_TEXTURE_2D);
 }
+
+/* ══════════════════════════════════════════════
+   WATER JETS  — parabolic arcs from pillar base
+   ══════════════════════════════════════════════ */
+void drawWaterJets(float radius) {
+    extern float waterTime;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_LIGHTING);
+
+    /* outer ring — 12 jets */
+    for (int i = 0; i < 12; i++) {
+        float baseAngle = i * 30.0f * (float)M_PI / 180.0f;
+        /* phase-offset height so jets pulse slightly */
+        float phaseH    = sinf(waterTime * 1.2f + i * 0.52f) * 0.4f + 2.6f;
+
+        glColor4f(0.65f, 0.88f, 1.0f, 0.70f);
+        glLineWidth(2.2f);
+        glBegin(GL_LINE_STRIP);
+        for (int j = 0; j <= 22; j++) {
+            float t  = (float)j / 22.0f;
+            float r  = radius * t;
+            float x  = cosf(baseAngle) * r;
+            float z  = sinf(baseAngle) * r;
+            float y  = phaseH * sinf(t * (float)M_PI);   /* parabolic arc */
+            glVertex3f(x, y, z);
+        }
+        glEnd();
+    }
+
+    /* inner ring — 6 shorter jets */
+    for (int i = 0; i < 6; i++) {
+        float baseAngle = i * 60.0f * (float)M_PI / 180.0f + 15.0f * (float)M_PI / 180.0f;
+        float phaseH    = sinf(waterTime + i * 1.05f) * 0.3f + 1.8f;
+
+        glColor4f(0.72f, 0.92f, 1.0f, 0.80f);
+        glLineWidth(1.8f);
+        glBegin(GL_LINE_STRIP);
+        for (int j = 0; j <= 18; j++) {
+            float t  = (float)j / 18.0f;
+            float r  = (radius * 0.55f) * t;
+            float x  = cosf(baseAngle) * r;
+            float z  = sinf(baseAngle) * r;
+            float y  = phaseH * sinf(t * (float)M_PI);
+            glVertex3f(x, y, z);
+        }
+        glEnd();
+    }
+
+    /* top spout — vertical fan */
+    for (int i = 0; i < 8; i++) {
+        float sa    = i * 45.0f * (float)M_PI / 180.0f;
+        float phaseH = sinf(waterTime * 1.4f + i * 0.78f) * 0.35f + 2.2f;
+        glColor4f(0.78f, 0.94f, 1.0f, 0.75f);
+        glLineWidth(1.5f);
+        glBegin(GL_LINE_STRIP);
+        for (int j = 0; j <= 15; j++) {
+            float t  = (float)j / 15.0f;
+            float r  = 1.2f * t;
+            float x  = cosf(sa) * r;
+            float z  = sinf(sa) * r;
+            float y  = phaseH * sinf(t * (float)M_PI);
+            glVertex3f(x, y, z);
+        }
+        glEnd();
+    }
+
+    glLineWidth(1.0f);
+    glEnable(GL_LIGHTING);
+    glDisable(GL_BLEND);
+}
+
+/* ══════════════════════════════════════════════
+   GRAND FOUNTAIN — 3-tier, upright, centred
+   Key fix: ALL gluDisk / gluCylinder calls
+   are preceded by glRotatef(-90,1,0,0) so
+   they lie HORIZONTAL (face up)
+   ══════════════════════════════════════════════ */
+void drawFountain(float cx, float cz) {
+    glPushMatrix();
+    glTranslatef(cx, 0.0f, cz);
+    GLUquadric* q = gluNewQuadric();
+
+    /* ────────────────────────────────────────────
+       TIER 1  —  outer basin
+       Ground level → rim at Y = 1.05
+    ──────────────────────────────────────────── */
+
+    /* basin floor disc */
+    glColor3f(0.68f, 0.72f, 0.80f);
+    glPushMatrix();
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);   /* FLAT */
+    gluDisk(q, 0.0f, 7.2f, 40, 4);
+    glPopMatrix();
+
+    /* basin side wall */
+    glColor3f(0.72f, 0.75f, 0.82f);
+    glPushMatrix();
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);   /* UPRIGHT cylinder */
+    gluCylinder(q, 7.2f, 7.2f, 0.90f, 40, 1);
+    glPopMatrix();
+
+    /* basin rim cap */
+    glColor3f(0.80f, 0.82f, 0.90f);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.90f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 7.2f, 7.6f, 0.30f, 40, 1);
+    glPopMatrix();
+
+    /* rim top flat ring */
+    glPushMatrix();
+    glTranslatef(0.0f, 1.20f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(q, 6.8f, 7.6f, 40, 2);
+    glPopMatrix();
+
+    /* decorative border stones */
+    for (int s = 0; s < 20; s++) {
+        float sa = s * 18.0f * (float)M_PI / 180.0f;
+        glColor3f(0.70f, 0.72f, 0.78f);
+        glPushMatrix();
+        glTranslatef(cosf(sa) * 7.95f, 0.10f, sinf(sa) * 7.95f);
+        glScalef(0.60f, 0.40f, 0.60f);
+        glutSolidSphere(1.0f, 8, 8);
+        glPopMatrix();
+    }
+
+    /* WATER SURFACE in outer basin */
+    glPushMatrix();
+    glTranslatef(0.0f, 0.78f, 0.0f);
+    drawWaterCircle(6.8f);              /* drawWaterCircle applies its own -90 rotation */
+    glPopMatrix();
+
+    /* ────────────────────────────────────────────
+       CENTRE PILLAR  (tier 1 → tier 2)
+       Rises from Y=0 to Y=4.0
+    ──────────────────────────────────────────── */
+    glColor3f(0.80f, 0.82f, 0.90f);
+    glPushMatrix();
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 0.75f, 0.60f, 4.0f, 18, 2);
+    glPopMatrix();
+
+    /* decorative collar at base of pillar */
+    glColor3f(0.90f, 0.84f, 0.62f);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.42f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 1.15f, 1.05f, 0.36f, 18, 1);
+    glPopMatrix();
+
+    /* ────────────────────────────────────────────
+       TIER 2  —  middle basin at Y = 4.0
+    ──────────────────────────────────────────── */
+    glColor3f(0.72f, 0.76f, 0.84f);
+    glPushMatrix();
+    glTranslatef(0.0f, 4.0f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(q, 0.0f, 4.4f, 28, 3);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.0f, 4.0f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 4.4f, 4.4f, 0.55f, 28, 1);
+    glPopMatrix();
+
+    /* middle basin rim */
+    glColor3f(0.80f, 0.84f, 0.92f);
+    glPushMatrix();
+    glTranslatef(0.0f, 4.55f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 4.4f, 4.75f, 0.22f, 28, 1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.0f, 4.77f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(q, 4.1f, 4.75f, 28, 2);
+    glPopMatrix();
+
+    /* WATER in middle basin */
+    glPushMatrix();
+    glTranslatef(0.0f, 4.52f, 0.0f);
+    drawWaterCircle(4.1f);
+    glPopMatrix();
+
+    /* pillar tier 2 → tier 3 */
+    glColor3f(0.80f, 0.82f, 0.90f);
+    glPushMatrix();
+    glTranslatef(0.0f, 4.0f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 0.52f, 0.40f, 3.6f, 14, 2);
+    glPopMatrix();
+
+    /* ────────────────────────────────────────────
+       TIER 3  —  top basin at Y = 7.6
+    ──────────────────────────────────────────── */
+    glColor3f(0.76f, 0.80f, 0.88f);
+    glPushMatrix();
+    glTranslatef(0.0f, 7.6f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(q, 0.0f, 2.2f, 22, 3);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.0f, 7.6f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 2.2f, 2.2f, 0.42f, 22, 1);
+    glPopMatrix();
+
+    glColor3f(0.82f, 0.86f, 0.94f);
+    glPushMatrix();
+    glTranslatef(0.0f, 8.02f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 2.2f, 2.5f, 0.20f, 22, 1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.0f, 8.22f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(q, 2.0f, 2.5f, 22, 2);
+    glPopMatrix();
+
+    /* WATER in top basin */
+    glPushMatrix();
+    glTranslatef(0.0f, 8.0f, 0.0f);
+    drawWaterCircle(2.0f);
+    glPopMatrix();
+
+    /* ────────────────────────────────────────────
+       GOLDEN SPIRE on top
+    ──────────────────────────────────────────── */
+    glColor3f(0.92f, 0.80f, 0.15f);
+    glPushMatrix();
+    glTranslatef(0.0f, 7.6f, 0.0f);
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+    gluCylinder(q, 0.20f, 0.10f, 3.2f, 10, 1);
+    glPopMatrix();
+
+    /* top globe */
+    glColor3f(1.0f, 0.88f, 0.20f);
+    glPushMatrix();
+    glTranslatef(0.0f, 10.84f, 0.0f);
+    glutSolidSphere(0.52f, 18, 18);
+    glPopMatrix();
+
+    /* ring of small gold balls */
+    for (int t = 0; t < 6; t++) {
+        float ta = t * 60.0f * (float)M_PI / 180.0f;
+        glColor3f(1.0f, 0.90f, 0.18f);
+        glPushMatrix();
+        glTranslatef(cosf(ta) * 0.72f, 10.84f, sinf(ta) * 0.72f);
+        glutSolidSphere(0.20f, 8, 8);
+        glPopMatrix();
+    }
+
+    /* ────────────────────────────────────────────
+       WATER JETS  (3 layers matching the 3 basins)
+    ──────────────────────────────────────────── */
+    /* outer jets from ground level */
+    glPushMatrix();
+    glTranslatef(0.0f, 0.85f, 0.0f);
+    drawWaterJets(6.2f);
+    glPopMatrix();
+
+    /* middle jets */
+    glPushMatrix();
+    glTranslatef(0.0f, 4.58f, 0.0f);
+    drawWaterJets(3.5f);
+    glPopMatrix();
+
+    /* top jets (small radius) */
+    glPushMatrix();
+    glTranslatef(0.0f, 8.08f, 0.0f);
+    drawWaterJets(1.4f);
+    glPopMatrix();
+
+    gluDeleteQuadric(q);
+    glPopMatrix();
+}
+
+/* ══════════════════════════════════════════════
+   UPDATE — add this call in your timerFunc()
+   
+   ══════════════════════════════════════════════ */
+
+
 
 /* ═══════════════════════════════════════════════════════
    STAGE  (faces south = -Z toward gate)
@@ -1869,161 +2098,278 @@ void drawPizzaStall(float cx,float cz,float ang){
     glTranslatef(cx,0,cz);
     glRotatef(ang,0,1,0);
 
-    GLUquadric*q=gluNewQuadric();
+    GLUquadric* q = gluNewQuadric();
 
     /* ===== BIGGER COUNTER ===== */
     glColor3f(0.55f,0.30f,0.12f);
     glPushMatrix();
-    glScalef(8.0f,1.8f,4.0f);
-    glTranslatef(0,.5f,0);
+    glScalef(9.0f,2.2f,4.5f);
+    glTranslatef(0,0.5f,0);
     glutSolidCube(1);
     glPopMatrix();
 
-    /* top slab */
+    /* ===== TOP SLAB ===== */
     glColor3f(0.82f,0.78f,0.65f);
     glPushMatrix();
-    glTranslatef(0,1.8f,0);
-    glScalef(8.2f,.2f,4.2f);
+    glTranslatef(0,2.2f,0);
+    glScalef(9.2f,0.25f,4.7f);
     glutSolidCube(1);
     glPopMatrix();
 
     /* ===== POSTS ===== */
-    float px[]={-3.8f,3.8f,-3.8f,3.8f};
-    float pz[]={-2.0f,-2.0f,2.0f,2.0f};
+    float px[]={-4.2f,4.2f,-4.2f,4.2f};
+    float pz[]={-2.2f,-2.2f,2.2f,2.2f};
+
     for(int i=0;i<4;i++){
         for(int st=0;st<5;st++){
             glColor3f(st%2?1.0f:0.9f, st%2?1.0f:0.15f, st%2?1.0f:0.15f);
             glPushMatrix();
-            glTranslatef(px[i],1.8f+st*1.0f,pz[i]);
+            glTranslatef(px[i],2.2f+st*1.0f,pz[i]);
             glRotatef(-90,1,0,0);
-            gluCylinder(q,.18,.18,1.0f,8,1);
+            gluCylinder(q,0.18f,0.18f,1.0f,8,1);
+            glPopMatrix();
+        }
+    }
+
+    /* ===== BIG AWNING ===== */
+    drawStallAwning(4.5f,4.5f,8.5f,14, 0.92f,0.18f,0.18f);
+
+    /* ===== BIG FRONT LOGO (NO MIRROR ISSUE) ===== */
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, pizzaTex);
+    glColor3f(1,1,1);
+
+    glPushMatrix();
+    glTranslatef(0,9.5f,-3.0f);   // position
+    glRotatef(-12,1,0,0);         // tilt like real shop
+
+    glBegin(GL_QUADS);
+      glTexCoord2f(0,1); glVertex3f(-4.5f,0,0);
+        glTexCoord2f(1,1); glVertex3f( 4.5f,0,0);
+        glTexCoord2f(1,0); glVertex3f( 4.5f,2.5f,0);
+        glTexCoord2f(0,0); glVertex3f(-4.5f,2.5f,0);
+    glEnd();
+
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+
+    /* ===== PIZZA DISPLAY ON COUNTER ===== */
+    for(int i=-2;i<=2;i++){
+        float x = i*1.5f;
+
+        glColor3f(0.95f,0.75f,0.25f);
+        glPushMatrix();
+        glTranslatef(x,2.4f,0.8f);
+        glRotatef(-90,1,0,0);
+        gluDisk(q,0,0.8f,16,1);
+        glPopMatrix();
+
+        glColor3f(1.0f,0.9f,0.3f);
+        glPushMatrix();
+        glTranslatef(x,2.42f,0.8f);
+        glRotatef(-90,1,0,0);
+        gluDisk(q,0,0.7f,16,1);
+        glPopMatrix();
+
+        glColor3f(0.8f,0.1f,0.1f);
+        glPushMatrix();
+        glTranslatef(x+0.2f,2.5f,0.8f);
+        glutSolidSphere(0.1,8,8);
+        glPopMatrix();
+    }
+
+    gluDeleteQuadric(q);
+    glPopMatrix();
+
+    
+}
+
+
+void drawBurgerStall(float cx,float cz,float ang){
+    glPushMatrix();
+    glTranslatef(cx,0,cz);
+    glRotatef(ang,0,1,0);
+
+    GLUquadric*q=gluNewQuadric();
+
+    /* ===== BIGGER COUNTER ===== */
+    glColor3f(0.44f,0.24f,0.08f);
+    glPushMatrix();
+    glScalef(8.5f,2.0f,4.2f);
+    glTranslatef(0,0.5f,0);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    /* top slab */
+    glColor3f(0.82f,0.72f,0.45f);
+    glPushMatrix();
+    glTranslatef(0,2.0f,0);
+    glScalef(8.7f,0.25f,4.4f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    /* ===== POSTS ===== */
+    float px[]={-4.0f,4.0f,-4.0f,4.0f};
+    float pz[]={-2.0f,-2.0f,2.0f,2.0f};
+
+    for(int i=0;i<4;i++){
+        for(int st=0;st<5;st++){
+            glColor3f(st%2?1.0f:0.95f, st%2?0.8f:0.2f, 0.0f);
+
+            glPushMatrix();
+            glTranslatef(px[i],2.0f+st*0.9f,pz[i]);
+            glRotatef(-90,1,0,0);
+            gluCylinder(q,0.18f,0.18f,0.9f,8,1);
             glPopMatrix();
         }
     }
 
     /* ===== AWNING ===== */
-    drawStallAwning(4.0f,4.0f,7.5f,14, 0.92f,0.18f,0.18f);
+    drawStallAwning(4.2f,4.2f,7.8f,14, 1.0f,0.6f,0.0f);
 
-    /* ===== REMOVE OLD BOARD ===== */
-    // (don’t draw any solid cube behind logo)
-
-    /* ===== FRONT LOGO (BIG & CLEAR) ===== */
+    /* ===== BIG FRONT LOGO (LIKE PIZZA) ===== */
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, pizzaTex);
+    glBindTexture(GL_TEXTURE_2D, burgerTex);
     glColor3f(1,1,1);
 
+    glPushMatrix();
+    glTranslatef(0,9.5f,-3.2f);
+    glRotatef(-12,1,0,0);
+
     glBegin(GL_QUADS);
-        glTexCoord2f(0,0); glVertex3f(-3.5f,7.5f,-2.6f);
-        glTexCoord2f(1,0); glVertex3f( 3.5f,7.5f,-2.6f);
-        glTexCoord2f(1,1); glVertex3f( 3.5f,9.5f,-2.6f);
-        glTexCoord2f(0,1); glVertex3f(-3.5f,9.5f,-2.6f);
+        glTexCoord2f(0,1); glVertex3f(-4.5f,0,0);
+        glTexCoord2f(1,1); glVertex3f( 4.5f,0,0);
+        glTexCoord2f(1,0); glVertex3f( 4.5f,2.5f,0);
+        glTexCoord2f(0,0); glVertex3f(-4.5f,2.5f,0);
     glEnd();
 
-    /* ===== BACK LOGO (FIXED MIRROR) ===== */
-    glBegin(GL_QUADS);
-        glTexCoord2f(0,0); glVertex3f( 3.5f,7.5f,2.6f);
-        glTexCoord2f(1,0); glVertex3f(-3.5f,7.5f,2.6f);
-        glTexCoord2f(1,1); glVertex3f(-3.5f,9.5f,2.6f);
-        glTexCoord2f(0,1); glVertex3f( 3.5f,9.5f,2.6f);
-    glEnd();
-
+    glPopMatrix();
     glDisable(GL_TEXTURE_2D);
 
-    /* ===== PIZZA DISPLAY ON COUNTER ===== */
+    /* ===== BURGER DISPLAY ===== */
     for(int i=-2;i<=2;i++){
-        float x = i*1.2f;
+        float x=i*1.5f;
 
-        /* base crust */
-        glColor3f(0.95f,0.75f,0.25f);
+        /* top bun */
+        glColor3f(0.9f,0.7f,0.3f);
         glPushMatrix();
-        glTranslatef(x,1.9f,0.5f);
-        glRotatef(-90,1,0,0);
-        gluDisk(q,0,0.7f,16,1);
+        glTranslatef(x,2.2f,0.8f);
+        glScalef(1.0f,0.5f,1.0f);
+        glutSolidSphere(0.6,12,8);
         glPopMatrix();
 
-        /* cheese */
-        glColor3f(1.0f,0.9f,0.3f);
+        /* patty */
+        glColor3f(0.5f,0.2f,0.1f);
         glPushMatrix();
-        glTranslatef(x,1.92f,0.5f);
-        glRotatef(-90,1,0,0);
-        gluDisk(q,0,0.6f,16,1);
+        glTranslatef(x,2.0f,0.8f);
+        glScalef(0.9f,0.2f,0.9f);
+        glutSolidSphere(0.6,10,6);
         glPopMatrix();
 
-        /* pepperoni */
-        glColor3f(0.8f,0.1f,0.1f);
+        /* bottom bun */
+        glColor3f(0.85f,0.6f,0.25f);
         glPushMatrix();
-        glTranslatef(x+0.2f,2.0f,0.5f);
-        glutSolidSphere(0.08,8,8);
+        glTranslatef(x,1.85f,0.8f);
+        glScalef(1.0f,0.3f,1.0f);
+        glutSolidSphere(0.6,10,6);
         glPopMatrix();
     }
 
-    /* ===== VENDOR ===== */
-    drawVendor(0,-1.0f,180, 0.85f,0.25f,0.2f);
+
 
     gluDeleteQuadric(q);
     glPopMatrix();
 }
 
-
-/* BURGER STALL */
-void drawBurgerStall(float cx,float cz,float ang){
-    glPushMatrix();glTranslatef(cx,0,cz);glRotatef(ang,0,1,0);
-    GLUquadric*q=gluNewQuadric();
-    glColor3f(0.44f,0.24f,0.08f);
-    glPushMatrix();glScalef(6.0f,1.3f,2.8f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
-    glColor3f(0.78f,0.68f,0.48f);
-    glPushMatrix();glTranslatef(0,1.38f,0);glScalef(6.2f,.14f,3.0f);glutSolidCube(1);glPopMatrix();
-    float px[]={-2.8f,2.8f,-2.8f,2.8f},pz[]={-1.35f,-1.35f,1.35f,1.35f};
-    for(int i=0;i<4;i++){
-        for(int st=0;st<5;st++){
-            glColor3f(st%2==0?0.92f:0.98f,st%2==0?0.75f:0.98f,st%2==0?0.0f:0.98f);
-            glPushMatrix();glTranslatef(px[i],1.38f+st*0.8f,pz[i]);glRotatef(-90,1,0,0);
-            gluCylinder(q,.14,.14,.8f,8,1);glPopMatrix();}
-    }
-    drawStallAwning(3.0f,2.8f,5.45f,10, 0.92f,0.62f,0.0f);
-    glColor3f(0.06f,0.04f,0.26f);
-    glPushMatrix();glTranslatef(0,5.8f,-1.5f);glScalef(5.4f,1.2f,.25f);glutSolidCube(1);glPopMatrix();
-    glColor3f(1.0f,0.72f,0.0f);
-    glPushMatrix();glTranslatef(0,5.8f,-1.62f);glScalef(5.0f,.85f,.08f);glutSolidCube(1);glPopMatrix();
-    /* burger bun on counter */
-    glColor3f(0.88f,0.72f,0.28f);
-    glPushMatrix();glTranslatef(-.5f,1.46f,.2f);glScalef(1.0f,0.5f,1.0f);glutSolidSphere(0.55f,12,8);glPopMatrix();
-    glColor3f(0.65f,0.28f,0.12f);
-    glPushMatrix();glTranslatef(-.5f,1.42f,.2f);glScalef(0.9f,0.22f,0.9f);glutSolidSphere(0.5f,10,6);glPopMatrix();
-    drawVendor(0,-.6f,180, 0.92f,0.62f,0.10f);
-    gluDeleteQuadric(q);glPopMatrix();
-}
-
-/* ICE CREAM STALL */
 void drawIceCreamStall(float cx,float cz,float ang){
-    glPushMatrix();glTranslatef(cx,0,cz);glRotatef(ang,0,1,0);
+    glPushMatrix();
+    glTranslatef(cx,0,cz);
+    glRotatef(ang,0,1,0);
+
     GLUquadric*q=gluNewQuadric();
-    glColor3f(0.82f,0.50f,0.75f);
-    glPushMatrix();glScalef(6.0f,1.3f,2.8f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
-    glColor3f(0.95f,0.82f,0.90f);
-    glPushMatrix();glTranslatef(0,1.38f,0);glScalef(6.2f,.14f,3.0f);glutSolidCube(1);glPopMatrix();
-    float px[]={-2.8f,2.8f,-2.8f,2.8f},pz[]={-1.35f,-1.35f,1.35f,1.35f};
+
+    /* ===== BIGGER COUNTER ===== */
+    glColor3f(0.85f,0.55f,0.80f);
+    glPushMatrix();
+    glScalef(8.5f,2.0f,4.2f);
+    glTranslatef(0,0.5f,0);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    /* top slab */
+    glColor3f(0.98f,0.88f,0.95f);
+    glPushMatrix();
+    glTranslatef(0,2.0f,0);
+    glScalef(8.7f,0.25f,4.4f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    /* ===== POSTS ===== */
+    float px[]={-4.0f,4.0f,-4.0f,4.0f};
+    float pz[]={-2.0f,-2.0f,2.0f,2.0f};
+
     for(int i=0;i<4;i++){
         for(int st=0;st<5;st++){
-            glColor3f(st%2==0?0.92f:0.98f,st%2==0?0.42f:0.98f,st%2==0?0.72f:0.98f);
-            glPushMatrix();glTranslatef(px[i],1.38f+st*0.8f,pz[i]);glRotatef(-90,1,0,0);
-            gluCylinder(q,.14,.14,.8f,8,1);glPopMatrix();}
-    }
-    drawStallAwning(3.0f,2.8f,5.45f,10, 0.92f,0.42f,0.72f);
-    glColor3f(0.06f,0.04f,0.26f);
-    glPushMatrix();glTranslatef(0,5.8f,-1.5f);glScalef(5.4f,1.2f,.25f);glutSolidCube(1);glPopMatrix();
-    glColor3f(1.0f,0.52f,0.82f);
-    glPushMatrix();glTranslatef(0,5.8f,-1.62f);glScalef(5.0f,.85f,.08f);glutSolidCube(1);glPopMatrix();
-    /* ice cream cone on counter */
-    glColor3f(0.88f,0.75f,0.52f);
-    glPushMatrix();glTranslatef(.4f,1.40f,.2f);glRotatef(180,1,0,0);
-    gluCylinder(q,.0f,.35f,.65f,10,1);glPopMatrix();
-    glColor3f(0.98f,0.62f,0.80f);
-    glPushMatrix();glTranslatef(.4f,1.42f,.2f);glutSolidSphere(.38f,12,12);glPopMatrix();
-    drawVendor(0,-.6f,180, 0.92f,0.42f,0.72f);
-    gluDeleteQuadric(q);glPopMatrix();
-}
+            glColor3f(st%2?1.0f:0.95f, st%2?0.7f:0.4f, st%2?0.9f:0.7f);
 
+            glPushMatrix();
+            glTranslatef(px[i],2.0f+st*0.9f,pz[i]);
+            glRotatef(-90,1,0,0);
+            gluCylinder(q,0.18f,0.18f,0.9f,8,1);
+            glPopMatrix();
+        }
+    }
+
+    /* ===== AWNING ===== */
+    drawStallAwning(4.2f,4.2f,7.8f,14, 1.0f,0.6f,0.9f);
+
+    /* ===== BIG FRONT BMP LOGO ===== */
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, iceTex);
+    glColor3f(1,1,1);
+
+    glPushMatrix();
+    glTranslatef(0,9.5f,-3.2f);
+    glRotatef(-12,1,0,0);
+
+    glBegin(GL_QUADS);
+      glTexCoord2f(0,1); glVertex3f(-4.5f,0,0);
+        glTexCoord2f(1,1); glVertex3f( 4.5f,0,0);
+        glTexCoord2f(1,0); glVertex3f( 4.5f,2.5f,0);
+        glTexCoord2f(0,0); glVertex3f(-4.5f,2.5f,0);
+    glEnd();
+
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+
+    /* ===== ICE CREAM DISPLAY ===== */
+    for(int i=-2;i<=2;i++){
+        float x=i*1.5f;
+
+        /* cone */
+        glColor3f(0.9f,0.75f,0.5f);
+        glPushMatrix();
+        glTranslatef(x,2.2f,0.8f);
+        glRotatef(180,1,0,0);
+        gluCylinder(q,0.0f,0.4f,0.8f,10,1);
+        glPopMatrix();
+
+        /* scoop colors */
+        if(i%3==0) glColor3f(1.0f,0.6f,0.8f);
+        else if(i%3==1) glColor3f(0.6f,0.8f,1.0f);
+        else glColor3f(1.0f,0.9f,0.5f);
+
+        glPushMatrix();
+        glTranslatef(x,2.5f,0.8f);
+        glutSolidSphere(0.45f,12,12);
+        glPopMatrix();
+    }
+
+
+
+    gluDeleteQuadric(q);
+    glPopMatrix();
+}
 /* ── BIG DINING TABLE + 4 CHAIRS + UMBRELLA ── */
 void drawBigDiningTable(float x,float z,float r,float g,float b){
     glPushMatrix();glTranslatef(x,0,z);
@@ -2052,25 +2398,59 @@ void drawBigDiningTable(float x,float z,float r,float g,float b){
         glVertex3f(2.4f*cosf(a1),3.65f,2.4f*sinf(a1));
         glEnd();
     }
-    /* 4 chairs */
-    for(int c=0;c<4;c++){
-        float ca=c*90*(float)M_PI/180,chx=1.85f*cosf(ca),chz=1.85f*sinf(ca);
-        glPushMatrix();glTranslatef(chx,0,chz);glRotatef(c*90+180,0,1,0);
-        float clx[]={-.32f,.32f,-.32f,.32f},clz[]={-.32f,-.32f,.32f,.32f};
-        glColor3f(0.52f,0.36f,0.16f);
-        for(int l=0;l<4;l++){glPushMatrix();glTranslatef(clx[l],0,clz[l]);glRotatef(-90,1,0,0);
-            gluCylinder(q,.05f,.05f,.55f,6,1);glPopMatrix();}
-        glColor3f(0.72f,0.50f,0.22f);
-        glPushMatrix();glTranslatef(0,.58f,0);glScalef(.72f,.10f,.72f);glutSolidCube(1);glPopMatrix();
-        /* backrest posts */
-        for(int s=-1;s<=1;s+=2){
-            glColor3f(0.52f,0.36f,0.16f);
-            glPushMatrix();glTranslatef(s*.28f,.58f,-.30f);glRotatef(-90,1,0,0);
-            gluCylinder(q,.04f,.04f,.68f,6,1);glPopMatrix();}
-        glColor3f(0.68f,0.46f,0.18f);
-        glPushMatrix();glTranslatef(0,.98f,-.30f);glScalef(.64f,.62f,.08f);glutSolidCube(1);glPopMatrix();
+    /* 4 chairs (FIXED - face inward) */
+for(int c=0;c<4;c++){
+    float angle = c * 90.0f * M_PI / 180.0f;
+
+    float chx = 1.85f * cosf(angle);
+    float chz = 1.85f * sinf(angle);
+
+    glPushMatrix();
+    glTranslatef(chx,0,chz);
+
+    // 🔥 FACE CENTER (IMPORTANT)
+    float rot = atan2f(-chx, -chz) * 180.0f / M_PI;
+    glRotatef(rot,0,1,0);
+
+    float clx[]={-.32f,.32f,-.32f,.32f};
+    float clz[]={-.32f,-.32f,.32f,.32f};
+
+    glColor3f(0.52f,0.36f,0.16f);
+    for(int l=0;l<4;l++){
+        glPushMatrix();
+        glTranslatef(clx[l],0,clz[l]);
+        glRotatef(-90,1,0,0);
+        gluCylinder(q,.05f,.05f,.55f,6,1);
         glPopMatrix();
     }
+
+    glColor3f(0.72f,0.50f,0.22f);
+    glPushMatrix();
+    glTranslatef(0,.58f,0);
+    glScalef(.72f,.10f,.72f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    // backrest posts
+    for(int s=-1;s<=1;s+=2){
+        glColor3f(0.52f,0.36f,0.16f);
+        glPushMatrix();
+        glTranslatef(s*.28f,.58f,-.30f);
+        glRotatef(-90,1,0,0);
+        gluCylinder(q,.04f,.04f,.68f,6,1);
+        glPopMatrix();
+    }
+
+    glColor3f(0.68f,0.46f,0.18f);
+    glPushMatrix();
+    glTranslatef(0,.98f,-.30f);
+    glScalef(.64f,.62f,.08f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPopMatrix();
+}
+     
     gluDeleteQuadric(q);glPopMatrix();
 }
 
@@ -2208,6 +2588,9 @@ void display(){
 
 
     pizzaTex = createTexture("pizza.bmp");
+    burgerTex = createTexture("burger.bmp");   // converted PNG
+    iceTex = createTexture("icecream.bmp");
+    waterTex = createTexture("water.bmp");
 
     drawSky();drawHills();drawClouds();drawGround();
     drawBoundaryWall();
@@ -2357,6 +2740,7 @@ void timerFunc(int){
     windTime+=.038f;fountainTime+=.06f;ledTime+=0.055f;
     spotAngle+=0.5f;if(spotAngle>=360)spotAngle-=360;
     glutPostRedisplay();
+    waterTime += 0.012f;
     glutTimerFunc(16,timerFunc,0);
 }
 
@@ -2395,6 +2779,7 @@ void mouseMove(int x,int y){
 
 /* ─── INIT + MAIN ─── */
 void init(){
+    
     glEnable(GL_DEPTH_TEST);glDepthFunc(GL_LEQUAL);
     glClearColor(.38f,.65f,.95f,1);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
@@ -2417,6 +2802,7 @@ void init(){
 }
 
 int main(int argc,char**argv){
+    
     glutInit(&argc,argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
     glutInitWindowSize(1280,800);
