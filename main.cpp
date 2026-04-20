@@ -838,38 +838,6 @@ void drawTree(float x,float z,float sc=1.0f){
     gluDeleteQuadric(q); glPopMatrix();
 }
 
-/* ─────────────────────────────
-   PALM TREE
-───────────────────────────── */
-void drawPalmTree(float x,float z){
-    glPushMatrix();glTranslatef(x,0,z);
-    GLUquadric*q=gluNewQuadric();
-    glColor3f(0.52f,0.34f,0.14f);
-    for(int s=0;s<8;s++){
-        float sy=(float)s/8,sy1=(float)(s+1)/8;
-        float sx=sinf(sy*1.2f)*0.5f;
-        glPushMatrix(); glTranslatef(sx,sy*7,0);
-        glRotatef(-90+sy*8,1,0,0);
-        gluCylinder(q,0.22f*(1-sy*0.3f),0.20f*(1-(sy+.125f)*0.3f),7.0f/8,8,1);
-        glPopMatrix();
-    }
-    float trunkTop=7.2f;
-    float tx=sinf(1.2f)*0.5f;
-    glColor3f(0.14f,0.58f,0.18f);
-    for(int f=0;f<7;f++){
-        float fa=f*360.f/7*(float)M_PI/180;
-        glPushMatrix(); glTranslatef(tx,trunkTop,0);
-        glRotatef(f*360.f/7,0,1,0); glRotatef(-35,1,0,0);
-        for(int s=0;s<8;s++){
-            float t=(float)s/8;
-            glPushMatrix();glTranslatef(0,0,t*3.5f);
-            glScalef((1-t)*0.5f,(1-t)*0.3f,0.5f);
-            glutSolidSphere(1,5,5); glPopMatrix();
-        }
-        glPopMatrix();
-    }
-    gluDeleteQuadric(q);glPopMatrix();
-}
 
 /* ─────────────────────────────
    LAMP POST
@@ -1580,98 +1548,89 @@ void drawIceCreamStall(float cx,float cz,float ang){
    DINING TABLE WITH UMBRELLA (food court)
    Enhanced with better chairs
 ───────────────────────────── */
-void drawDiningTable(float x,float z,float r,float g,float b){
+void drawBigDiningTable(float x,float z,float r,float g,float b){
     glPushMatrix();glTranslatef(x,0,z);
     GLUquadric*q=gluNewQuadric();
-
-    /* Table legs — 4 turned legs */
+    /* table legs */
+    float lx[]={-1.0f,1.0f,-1.0f,1.0f},lz[]={-1.0f,-1.0f,1.0f,1.0f};
     glColor3f(0.52f,0.38f,0.22f);
-    float lx[]={-0.62f,0.62f,-0.62f,0.62f},lz[]={-0.62f,-0.62f,0.62f,0.62f};
-    for(int i=0;i<4;i++){
-        glPushMatrix();glTranslatef(lx[i],0,lz[i]);glRotatef(-90,1,0,0);
-        gluCylinder(q,.055,.075,.85f,8,1);glPopMatrix();
-        /* turned detail */
-        glPushMatrix();glTranslatef(lx[i],.38f,lz[i]);glutSolidSphere(0.10f,6,6);glPopMatrix();
-    }
-    /* Cross brace */
-    glColor3f(0.48f,0.34f,0.18f);
-    glPushMatrix();glTranslatef(0,.25f,0);glScalef(1.3f,.06f,.06f);glutSolidCube(1);glPopMatrix();
-    glPushMatrix();glTranslatef(0,.25f,0);glScalef(.06f,.06f,1.3f);glutSolidCube(1);glPopMatrix();
-    /* Table top — round */
-    glColor3f(0.82f,0.66f,0.46f);
-    glPushMatrix();glTranslatef(0,.87f,0);glRotatef(-90,1,0,0);gluDisk(q,0,1.05f,20,2);glPopMatrix();
-    /* Table edge trim */
-    glColor3f(0.65f,0.50f,0.30f);
-    glPushMatrix();glTranslatef(0,.87f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,1.05f,1.05f,.06f,20,1);glPopMatrix();
-
-    /* Umbrella pole */
+    for(int i=0;i<4;i++){glPushMatrix();glTranslatef(lx[i],0,lz[i]);glRotatef(-90,1,0,0);
+        gluCylinder(q,.075,.095,1.0f,8,1);glPopMatrix();}
+    /* table top */
+    glColor3f(0.82f,0.66f,0.44f);
+    glPushMatrix();glTranslatef(0,1.02f,0);glRotatef(-90,1,0,0);gluDisk(q,0,1.35f,24,3);glPopMatrix();
+    /* umbrella pole */
     glColor3f(0.40f,0.40f,0.45f);
-    glPushMatrix();glTranslatef(0,.87f,0);glRotatef(-90,1,0,0);
-    gluCylinder(q,.055,.055,3.2f,8,1);glPopMatrix();
-    /* Umbrella finial */
-    glColor3f(r,g,b);
-    glPushMatrix();glTranslatef(0,4.1f,0);glutSolidSphere(0.14f,8,8);glPopMatrix();
-
-    /* Umbrella canopy — 12 segments, alternating color */
-    int US=12;
+    glPushMatrix();glTranslatef(0,1.02f,0);glRotatef(-90,1,0,0);
+    gluCylinder(q,.065,.065,3.8f,8,1);glPopMatrix();
+    glPushMatrix();glTranslatef(0,4.85f,0);glutSolidSphere(0.16f,8,8);glPopMatrix();
+    /* umbrella canopy 14 segments */
+    int US=14;
     for(int s=0;s<US;s++){
-        float a0=s*2*(float)M_PI/US;
-        float a1=(s+1)*2*(float)M_PI/US;
-        float am=(a0+a1)*0.5f;
-        /* Main panel */
-        glColor3f(s%2==0?r:1, s%2==0?g:1, s%2==0?b:1);
+        float a0=s*2*(float)M_PI/US,a1=(s+1)*2*(float)M_PI/US;
+        glColor3f(s%2==0?r:1,s%2==0?g:1,s%2==0?b:1);
         glBegin(GL_TRIANGLES);
-        glVertex3f(0,4.05f,0);
-        glVertex3f(1.95f*cosf(a0),3.15f,1.95f*sinf(a0));
-        glVertex3f(1.95f*cosf(a1),3.15f,1.95f*sinf(a1));
-        glEnd();
-        /* Scalloped edge */
-        glColor3f(s%2==0?r*0.8f:0.9f, s%2==0?g*0.8f:0.9f, s%2==0?b*0.8f:0.9f);
-        glBegin(GL_TRIANGLES);
-        glVertex3f(1.95f*cosf(a0),3.15f,1.95f*sinf(a0));
-        glVertex3f(2.22f*cosf(am),2.88f,2.22f*sinf(am));
-        glVertex3f(1.95f*cosf(a1),3.15f,1.95f*sinf(a1));
+        glVertex3f(0,4.82f,0);
+        glVertex3f(2.4f*cosf(a0),3.65f,2.4f*sinf(a0));
+        glVertex3f(2.4f*cosf(a1),3.65f,2.4f*sinf(a1));
         glEnd();
     }
-
-    /* 4 Chairs around table — proper with back and armrests */
+    /* 4 chairs (FIXED - face inward) */
     for(int c=0;c<4;c++){
-        float ca=c*90*(float)M_PI/180;
-        float chx=1.55f*cosf(ca), chz=1.55f*sinf(ca);
-        float faceAng=c*90.0f+180.0f;
-        glPushMatrix();glTranslatef(chx,0,chz);glRotatef(faceAng,0,1,0);
+    float angle = c * 90.0f * M_PI / 180.0f;
 
-        /* Chair legs */
-        glColor3f(0.55f,0.38f,0.18f);
-        float flx[]={-0.28f,0.28f,-0.28f,0.28f},flz[]={-0.28f,-0.28f,0.28f,0.28f};
-        for(int l=0;l<4;l++){
-            glPushMatrix();glTranslatef(flx[l],0,flz[l]);glRotatef(-90,1,0,0);
-            gluCylinder(q,.04f,.04f,.5f,6,1);glPopMatrix();
-        }
-        /* Seat */
-        glColor3f(0.72f,0.48f,0.22f);
-        glPushMatrix();glTranslatef(0,.52f,0);glScalef(.62f,.08f,.62f);glutSolidCube(1);glPopMatrix();
-        /* Back rest */
-        glColor3f(0.65f,0.42f,0.18f);
-        glPushMatrix();glTranslatef(0,.95f,-0.27f);glScalef(.60f,.72f,.07f);glutSolidCube(1);glPopMatrix();
-        /* Back legs extension */
-        glColor3f(0.55f,0.38f,0.18f);
-        glPushMatrix();glTranslatef(-0.25f,.52f,-0.27f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.04f,.04f,.45f,6,1);glPopMatrix();
-        glPushMatrix();glTranslatef(0.25f,.52f,-0.27f);glRotatef(-90,1,0,0);
-        gluCylinder(q,.04f,.04f,.45f,6,1);glPopMatrix();
+    float chx = 1.85f * cosf(angle);
+    float chz = 1.85f * sinf(angle);
+
+    glPushMatrix();
+    glTranslatef(chx,0,chz);
+
+    // 🔥 FACE CENTER (IMPORTANT)
+    float rot = atan2f(-chx, -chz) * 180.0f / M_PI;
+    glRotatef(rot,0,1,0);
+
+    float clx[]={-.32f,.32f,-.32f,.32f};
+    float clz[]={-.32f,-.32f,.32f,.32f};
+
+    glColor3f(0.52f,0.36f,0.16f);
+    for(int l=0;l<4;l++){
+        glPushMatrix();
+        glTranslatef(clx[l],0,clz[l]);
+        glRotatef(-90,1,0,0);
+        gluCylinder(q,.05f,.05f,.55f,6,1);
         glPopMatrix();
     }
 
-    /* Items on table */
-    glColor3f(0.88f,0.22f,0.22f);
-    glPushMatrix();glTranslatef(0.35f,.92f,0.12f);glutSolidSphere(.09f,6,6);glPopMatrix(); /* ketchup */
-    glColor3f(0.92f,0.88f,0.12f);
-    glPushMatrix();glTranslatef(-0.28f,.92f,0.12f);glutSolidSphere(.09f,6,6);glPopMatrix(); /* mustard */
+    glColor3f(0.72f,0.50f,0.22f);
+    glPushMatrix();
+    glTranslatef(0,.58f,0);
+    glScalef(.72f,.10f,.72f);
+    glutSolidCube(1);
+    glPopMatrix();
 
+    // backrest posts
+    for(int s=-1;s<=1;s+=2){
+        glColor3f(0.52f,0.36f,0.16f);
+        glPushMatrix();
+        glTranslatef(s*.28f,.58f,-.30f);
+        glRotatef(-90,1,0,0);
+        gluCylinder(q,.04f,.04f,.68f,6,1);
+        glPopMatrix();
+    }
+
+    glColor3f(0.68f,0.46f,0.18f);
+    glPushMatrix();
+    glTranslatef(0,.98f,-.30f);
+    glScalef(.64f,.62f,.08f);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPopMatrix();
+}
+     
     gluDeleteQuadric(q);glPopMatrix();
 }
+
 
 /* ─────────────────────────────
    GAME STALL — Ring Toss
@@ -3126,8 +3085,7 @@ for(int i=0;i<8;i++){
         drawTree(-24,i*10,0.85f);
         drawTree( 24,i*10,0.85f);
     }
-    /* Palm trees in food court */
-    drawPalmTree(-50,-44);drawPalmTree(-35,-40);drawPalmTree(-50,-25);drawPalmTree(-38,-20);
+   
 
     /* ── FUNLAND ENTRANCE GATE ── */
     drawFunlandGate(0,-65);
@@ -3199,35 +3157,26 @@ for(int i=0;i<8;i++){
    glEnable(GL_LIGHTING);
 
 
-    /* 3 food stalls side by side */
+ /* 3 food stalls side by side */
     drawPizzaStall(-52,-42, 90);    /* pizza — leftmost, facing east (+X) */
     drawBurgerStall(-42,-42, 90);   /* burger — middle */
     drawIceCreamStall(-32,-42, 90); /* ice cream — rightmost */
-    
 
-    /* Dining area: 3 rows × 2 columns, neatly spaced */
-    /* Row 1 (Z=-42) */
-    drawDiningTable(-42,-42, 0.92f,0.22f,0.22f); /* red umbrella */
-    drawDiningTable(-36,-42, 0.22f,0.52f,0.92f); /* blue */
-    drawDiningTable(-30,-42, 0.22f,0.78f,0.28f); /* green */
-    /* Row 2 (Z=-34) */
-    drawDiningTable(-42,-34, 0.92f,0.72f,0.10f); /* yellow */
-    drawDiningTable(-36,-34, 0.78f,0.18f,0.82f); /* purple */
-    drawDiningTable(-30,-34, 0.92f,0.42f,0.18f); /* orange */
-    /* Row 3 (Z=-26) */
-    drawDiningTable(-42,-26, 0.18f,0.72f,0.82f); /* cyan */
-    drawDiningTable(-36,-26, 0.92f,0.28f,0.48f); /* pink */
-    drawDiningTable(-30,-26, 0.58f,0.82f,0.22f); /* lime */
+    /* big dining tables in front of stalls */
+    float dtc[][3]={{0.92f,0.22f,0.22f},{0.22f,0.52f,0.92f},{0.22f,0.78f,0.28f},
+                    {0.92f,0.72f,0.10f},{0.78f,0.18f,0.82f},{0.92f,0.42f,0.18f},
+                    {0.18f,0.72f,0.82f},{0.92f,0.28f,0.48f},{0.58f,0.82f,0.22f},
+                    {0.88f,0.58f,0.10f},{0.28f,0.48f,0.88f},{0.88f,0.88f,0.18f}};
+    for(int r=0;r<3;r++) for(int c=0;c<4;c++)
+        drawBigDiningTable(-54+c*7.0f,-28+r*7.0f,dtc[r*4+c][0],dtc[r*4+c][1],dtc[r*4+c][2]);
 
-    /* Food court lamp posts */
-    drawLampPost(-50,-52);drawLampPost(-32,-52);
-    drawLampPost(-50,-14);drawLampPost(-32,-14);
-    drawLampPost(-42,-20);
-    /* Food court benches along boundary */
-    drawBench(-60,-44,0);drawBench(-60,-30,0);
-    /* Trash bins */
-    drawTrashBin(-60,-38,0.88f,0.48f,0.10f);
-    drawTrashBin(-32,-20,0.88f,0.48f,0.10f);
+    drawLampPost(-54,-52);drawLampPost(-38,-52);drawLampPost(-24,-52);
+    drawLampPost(-54,-18);drawLampPost(-38,-18);drawLampPost(-24,-18);
+    drawTrashBin(-58,-30,0.88f,0.48f,0.10f);drawTrashBin(-22,-30,0.88f,0.48f,0.10f);
+    drawTrashBin(-58,-48,0.88f,0.48f,0.10f);drawTrashBin(-22,-48,0.88f,0.48f,0.10f);
+
+
+
 
     /* ── GAME STALLS (NW, X=-62..-22, Z=+10..+62) ── */
     drawRingTossStall  (-44,28,  0);
