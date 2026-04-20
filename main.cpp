@@ -2323,189 +2323,244 @@ void drawMerryGoRound(float cx,float cz,float spin){
 /* ─────────────────────────────
    GIANT FERRIS WHEEL
 ───────────────────────────── */
-void drawGiantWheel(float cx, float cz){
-    glPushMatrix();
-    glTranslatef(cx, 0, cz);
+void drawGiantWheel(float cx,float cz){
+    /* draw plaza first */
+    
+   
 
-    const float HEIGHT = 24.0f;
-    const float RADIUS = 15.0f;
-    const float LEG_SPREAD = 9.0f;
+    glPushMatrix();glTranslatef(cx,0,cz);
+    const float HH=26.0f, WR=18.0f, LS=10.0f;
+    GLUquadric*q=gluNewQuadric();
 
-    GLUquadric* q = gluNewQuadric();
-
-    // =========================
-    // SUPPORT LEGS
-    // =========================
-    glColor3f(0.55f, 0.55f, 0.6f);
-
-    for(int i=-1;i<=1;i+=2){
-        for(int z=-1;z<=1;z+=2){
-            glPushMatrix();
-            glTranslatef(i*LEG_SPREAD, 0, z*2);
-            glRotatef(i*12,0,0,1);
-            glRotatef(-90,1,0,0);
-            gluCylinder(q,0.5,0.35,HEIGHT,16,1);
-            glPopMatrix();
-        }
+    /* ── A-frame support legs ── */
+    glColor3f(0.20f,0.22f,0.26f);
+    for(int s=-1;s<=1;s+=2){
+        glPushMatrix();glTranslatef(s*LS,0,2.2f);
+        glRotatef(s*13.0f,0,0,1);glRotatef(-90,1,0,0);glScalef(0.9f,0.9f,1);
+        gluCylinder(q,0.58f,0.42f,HH+4,14,2);glPopMatrix();
+        glPushMatrix();glTranslatef(s*LS,0,-2.2f);
+        glRotatef(s*13.0f,0,0,1);glRotatef(-90,1,0,0);glScalef(0.9f,0.9f,1);
+        gluCylinder(q,0.58f,0.42f,HH+4,14,2);glPopMatrix();
     }
-
-    // =========================
-    // AXLE BASE
-    // =========================
-    glColor3f(0.3f,0.3f,0.35f);
-    glPushMatrix();
-    glTranslatef(0, HEIGHT, 0);
-    glutSolidSphere(1.2f, 20, 20);
-    glPopMatrix();
-
-    // =========================
-    // WHEEL ROTATION
-    // =========================
-    glPushMatrix();
-    glTranslatef(0, HEIGHT, 0);
-    glRotatef(wheelAngle, 0, 0, 1);
-
-    // =========================
-    // RIM (BRIGHT YELLOW)
-    // =========================
-    int segments = 64;
-
+    /* cross-braces */
+    glColor3f(0.28f,0.30f,0.36f);
+    for(int b=0;b<3;b++){float bh=HH*(0.25f+b*0.22f);
+        glPushMatrix();glTranslatef(-LS,bh,0);glRotatef(90,0,1,0);
+        gluCylinder(q,0.28f,0.28f,LS*2,8,1);glPopMatrix();}
+    /* diagonal X brace */
     for(int side=-1;side<=1;side+=2){
-        float z = side * 1.5f;
+        float x0=-LS*0.82f,y0=HH*0.18f,x1=LS*0.82f,y1=HH*0.78f;
+        if(side<0){float t=x0;x0=x1;x1=t;t=y0;y0=y1;y1=t;}
+        float dbx=x1-x0,dby=y1-y0,dl=sqrtf(dbx*dbx+dby*dby);
+        glColor3f(0.32f,0.32f,0.38f);
+        glPushMatrix();glTranslatef(x0,y0,0);
+        glRotatef(atan2f(dby,dbx)*180/(float)M_PI,0,0,1);
+        glRotatef(90,0,1,0);gluCylinder(q,0.22f,0.22f,dl,8,1);glPopMatrix();}
+    /* axle support columns */
+    glColor3f(0.26f,0.28f,0.32f);
+    for(int sz=-1;sz<=1;sz+=2){
+        glPushMatrix();glTranslatef(0,0,sz*3.2f);glRotatef(-90,1,0,0);
+        gluCylinder(q,0.48f,0.48f,HH+1.5f,12,1);glPopMatrix();}
+    /* axle housing */
+    glColor3f(0.22f,0.22f,0.28f);
+    glPushMatrix();glTranslatef(0,HH,0);glScalef(2.8f,2.0f,2.8f);glutSolidCube(1);glPopMatrix();
+    /* axle shaft */
+    glColor3f(0.58f,0.58f,0.65f);
+    glPushMatrix();glTranslatef(0,HH,-3.8f);glRotatef(-90,1,0,0);
+    gluCylinder(q,0.52f,0.52f,7.6f,14,1);glPopMatrix();
 
-      glColor3f(0.9f,0.2f,0.2f);  // 🔥 updated color
+    /* motor house */
+    glColor3f(0.22f,0.22f,0.26f);
+    glPushMatrix();glTranslatef(LS+2.0f,1.2f,0);glScalef(3.0f,2.4f,2.4f);glutSolidCube(1);glPopMatrix();
+    glColor3f(0.92f,0.72f,0.08f);
+    for(int i=0;i<5;i++){glPushMatrix();glTranslatef(LS+0.6f+i*0.55f,0.95f,1.25f);
+        glScalef(0.25f,1.9f,0.04f);glutSolidCube(1);glPopMatrix();}
+    /* safety railing */
+    glColor3f(0.88f,0.72f,0.10f);
+    for(int s=0;s<8;s++){float ra=s*45*(float)M_PI/180;
+        glPushMatrix();glTranslatef(cosf(ra)*4.0f,0,sinf(ra)*4.0f);glRotatef(-90,1,0,0);
+        gluCylinder(q,.09f,.09f,1.2f,6,1);glPopMatrix();}
+    glDisable(GL_LIGHTING);
+    glColor3f(0.88f,0.72f,0.10f); glLineWidth(2.5f);
+    glBegin(GL_LINE_LOOP);
+    for(int i=0;i<32;i++){float a=i*2*(float)M_PI/32;glVertex3f(cosf(a)*4.0f,1.2f,sinf(a)*4.0f);}
+    glEnd();
+    glLineWidth(1.0f); glEnable(GL_LIGHTING);
 
-        for(int i=0;i<segments;i++){
-            float a0 = i*2*M_PI/segments;
-            float a1 = (i+1)*2*M_PI/segments;
+    /* ══════════ ROTATING WHEEL ══════════ */
+    glPushMatrix();glTranslatef(0,HH,0);glRotatef(wheelAngle,0,0,1);
 
+    /* outer rim (front + back) with LED chase */
+    const int RS=72;
+    for(int ring=0;ring<2;ring++){float rz=(ring==0)?-2.2f:2.2f;
+        for(int s=0;s<RS;s++){
+            float a0=s*2*(float)M_PI/RS,a1=(s+1)*2*(float)M_PI/RS;
+            float hue=ledTime*2.2f+s*0.088f;
+            float lr=0.5f+0.5f*sinf(hue),lg=0.5f+0.5f*sinf(hue+2.1f),lb=0.5f+0.5f*sinf(hue+4.2f);
+            glColor3f(0.72f+lr*0.24f,0.12f+lg*0.1f,0.12f+lb*0.1f);
             glBegin(GL_QUADS);
-            glVertex3f(RADIUS*cos(a0), RADIUS*sin(a0), z-0.4f);
-            glVertex3f(RADIUS*cos(a1), RADIUS*sin(a1), z-0.4f);
-            glVertex3f(RADIUS*cos(a1), RADIUS*sin(a1), z+0.4f);
-            glVertex3f(RADIUS*cos(a0), RADIUS*sin(a0), z+0.4f);
-            glEnd();
-        }
+            glVertex3f(WR*cosf(a0),WR*sinf(a0),rz-0.35f);
+            glVertex3f(WR*cosf(a1),WR*sinf(a1),rz-0.35f);
+            glVertex3f(WR*cosf(a1),WR*sinf(a1),rz+0.35f);
+            glVertex3f(WR*cosf(a0),WR*sinf(a0),rz+0.35f);
+            glEnd();}
+        /* rim inner face */
+        glColor3f(0.52f,0.52f,0.58f);
+        for(int s=0;s<RS;s++){float a0=s*2*(float)M_PI/RS,a1=(s+1)*2*(float)M_PI/RS;
+            float r2=WR-0.62f;
+            glBegin(GL_QUADS);
+            glVertex3f(r2*cosf(a0),r2*sinf(a0),rz-0.35f);
+            glVertex3f(r2*cosf(a1),r2*sinf(a1),rz-0.35f);
+            glVertex3f(r2*cosf(a1),r2*sinf(a1),rz+0.35f);
+            glVertex3f(r2*cosf(a0),r2*sinf(a0),rz+0.35f);
+            glEnd();}
     }
+    /* cross-ties */
+    glColor3f(0.45f,0.45f,0.52f);
+    for(int s=0;s<RS;s+=4){float a=s*2*(float)M_PI/RS;
+        glBegin(GL_LINES);glVertex3f(WR*cosf(a),WR*sinf(a),-2.2f);
+        glVertex3f(WR*cosf(a),WR*sinf(a),2.2f);glEnd();}
+    /* inner ring */
+    float iR2=WR*0.55f;
+    glColor3f(0.38f,0.38f,0.44f);
+    for(int s=0;s<RS;s++){float a0=s*2*(float)M_PI/RS,a1=(s+1)*2*(float)M_PI/RS;
+        glBegin(GL_QUADS);
+        glVertex3f(iR2*cosf(a0),iR2*sinf(a0),-0.20f);
+        glVertex3f(iR2*cosf(a1),iR2*sinf(a1),-0.20f);
+        glVertex3f(iR2*cosf(a1),iR2*sinf(a1), 0.20f);
+        glVertex3f(iR2*cosf(a0),iR2*sinf(a0), 0.20f);
+        glEnd();}
 
-    // =========================
-    // SPOKES
-    // =========================
-    int spokes = 20;
-
-    for(int i=0;i<spokes;i++){
-        float a = i*2*M_PI/spokes;
-        float x = RADIUS*cos(a);
-        float y = RADIUS*sin(a);
-
-        glColor3f(1.0f,0.9f,0.1f);
-
+    /* spokes — 20, box section with LED */
+    const int SPOKES=20;
+    for(int sp=0;sp<SPOKES;sp++){
+        float sa=sp*2*(float)M_PI/SPOKES;
+        float sx=WR*cosf(sa),sy=WR*sinf(sa),dl=sqrtf(sx*sx+sy*sy);
+        float angle=atan2f(sy,sx)*180/(float)M_PI;
+        glColor3f(0.32f,0.32f,0.38f);
+        glPushMatrix();glRotatef(angle,0,0,1);glTranslatef(0,0,-1.8f);
+        glScalef(dl,0.32f,3.6f);glutSolidCube(1);glPopMatrix();
+        /* LED neon line */
+        glDisable(GL_LIGHTING);
+        float hue=ledTime*1.8f+sp*0.31f;
+        glColor3f(0.5f+0.5f*sinf(hue),0.5f+0.5f*sinf(hue+2.1f),0.5f+0.5f*sinf(hue+4.2f));
         glLineWidth(2.5f);
-        glBegin(GL_LINES);
-        glVertex3f(0,0,-1.2f); glVertex3f(x,y,-1.2f);
-        glVertex3f(0,0, 1.2f); glVertex3f(x,y, 1.2f);
-        glEnd();
+        glBegin(GL_LINES);glVertex3f(0,0,0);glVertex3f(sx,sy,0);glEnd();
         glLineWidth(1.0f);
+        /* midpoint glow bead */
+        float hue2=ledTime*2.4f+sp*0.42f;
+        glColor3f(0.5f+0.5f*sinf(hue2),0.5f+0.5f*sinf(hue2+2.1f),0.5f+0.5f*sinf(hue2+4.2f));
+        glPushMatrix();glTranslatef(sx*.58f,sy*.58f,0);glutSolidSphere(0.30f,8,8);glPopMatrix();
+        glEnable(GL_LIGHTING);
     }
+    /* hub */
+    glColor3f(0.90f,0.84f,0.12f);
+    glPushMatrix();glRotatef(-90,1,0,0);gluDisk(q,0,2.0f,18,3);glPopMatrix();
+    glPushMatrix();glRotatef(90,1,0,0);gluDisk(q,0,2.0f,18,3);glPopMatrix();
+    glColor3f(0.98f,0.92f,0.22f);glutSolidSphere(1.5f,18,18);
+    /* hub LED ring */
+    glDisable(GL_LIGHTING);
+    for(int i=0;i<20;i++){float hue=ledTime*3.2f+i*0.31f;
+        glColor3f(0.5f+0.5f*sinf(hue),0.5f+0.5f*sinf(hue+2.1f),0.5f+0.5f*sinf(hue+4.2f));
+        float a=i*2*(float)M_PI/20;
+        glPushMatrix();glTranslatef(cosf(a)*2.1f,sinf(a)*2.1f,0);glutSolidSphere(0.20f,6,6);glPopMatrix();}
+    glEnable(GL_LIGHTING);
 
-    // =========================
-    // CENTER HUB
-    // =========================
-    glColor3f(1.0f, 0.95f, 0.1f);
-    glutSolidSphere(1.6f, 24, 24);
-
-    // =========================
-    // CABINS (UPDATED BIG SEATS)
-    // =========================
-    int cabins = 16;
-
-    float colors[][3] = {
-        {0.9f,0.2f,0.2f},{0.2f,0.5f,0.9f},{0.2f,0.8f,0.3f},
-        {0.9f,0.7f,0.1f},{0.8f,0.2f,0.8f},{0.1f,0.8f,0.8f}
+    /* gondolas — 18 premium cabins */
+    const int NG=18;
+    float gc[][3]={
+        {0.90f,0.18f,0.18f},{0.18f,0.50f,0.92f},{0.18f,0.82f,0.22f},{0.92f,0.72f,0.10f},
+        {0.82f,0.18f,0.82f},{0.10f,0.82f,0.82f},{0.92f,0.48f,0.10f},{0.18f,0.18f,0.92f},
+        {0.92f,0.18f,0.58f},{0.28f,0.78f,0.28f},{0.88f,0.88f,0.18f},{0.18f,0.58f,0.88f},
+        {0.78f,0.28f,0.18f},{0.28f,0.28f,0.78f},{0.88f,0.48f,0.28f},{0.28f,0.88f,0.58f},
+        {0.92f,0.62f,0.18f},{0.62f,0.18f,0.88f}
     };
+    for(int g=0;g<NG;g++){
+        float ga=g*2*(float)M_PI/NG;
+        float gx=WR*cosf(ga),gy=WR*sinf(ga);
+        glPushMatrix();glTranslatef(gx,gy,0);glRotatef(-wheelAngle,0,0,1);
+        /* hanger arm */
+        glColor3f(0.42f,0.42f,0.50f);
+        glPushMatrix();glTranslatef(0,0,-0.1f);glRotatef(-90,1,0,0);
+        gluCylinder(q,0.10f,0.10f,1.8f,6,1);glPopMatrix();
+        glTranslatef(0,-1.8f,0);
+        int ci=g%NG;
+        /* cabin body */
+        //glColor3f(gc[ci][0],gc[ci][1],gc[ci][2]);
+        //glPushMatrix();glScalef(2.2f,1.8f,1.5f);glutSolidCube(1);glPopMatrix();
 
-    for(int i=0;i<cabins;i++){
-        float a = i*2*M_PI/cabins;
-        float x = RADIUS*cos(a);
-        float y = RADIUS*sin(a);
+        /* ===== REALISTIC CABIN ===== */
+        
 
+
+        /* cabin body (rounded box feel) */
+        glColor3f(gc[ci][0]*0.9f,gc[ci][1]*0.9f,gc[ci][2]*0.9f);
         glPushMatrix();
-        glTranslatef(x,y,0);
-
-        // keep upright
-        glRotatef(-wheelAngle,0,0,1);
-
-        // hanger rod
-        glColor3f(0.4f,0.4f,0.45f);
-        glPushMatrix();
-        glRotatef(-90,1,0,0);
-        gluCylinder(q,0.08,0.08,2.2,8,1);
-        glPopMatrix();
-
-        glTranslatef(0,-2.2f,0);
-
-        int c = i % 6;
-
-        // =====================
-        // SEAT BASE
-        // =====================
-        glColor3f(colors[c][0], colors[c][1], colors[c][2]);
-
-        glPushMatrix();
-        glScalef(2.6f,0.6f,1.8f);
+        glScalef(1.8f,1.6f,1.2f);
         glutSolidCube(1);
         glPopMatrix();
 
-        // =====================
-        // BACK REST
-        // =====================
+        /* glass front */
+        glColor4f(0.6f,0.9f,1.0f,0.6f);
         glPushMatrix();
-        glTranslatef(0,0.9f,-0.6f);
-        glScalef(2.4f,1.6f,0.3f);
+        glTranslatef(0,0.0f,0.75f);
+        glScalef(1.2f,1.2f,0.05f);
         glutSolidCube(1);
         glPopMatrix();
 
-        // =====================
-        // SIDE SUPPORTS
-        // =====================
-        glColor3f(0.3f,0.3f,0.3f);
-
-        for(int s=-1;s<=1;s+=2){
-            glPushMatrix();
-            glTranslatef(s*1.2f,0.8f,0);
-            glScalef(0.15f,1.5f,0.15f);
-            glutSolidCube(1);
-            glPopMatrix();
-        }
-
-        // =====================
-        // TOP ROOF
-        // =====================
-        glColor3f(colors[c][0]*0.85f, colors[c][1]*0.85f, colors[c][2]*0.85f);
-
+        /* glass back */
         glPushMatrix();
-        glTranslatef(0,1.9f,0);
-        glScalef(2.6f,0.3f,1.9f);
+        glTranslatef(0,0.0f,-0.75f);
+        glScalef(1.2f,1.2f,0.05f);
         glutSolidCube(1);
         glPopMatrix();
 
-        // =====================
-        // FRONT BAR
-        // =====================
-        glColor3f(0.2f,0.2f,0.2f);
+        /* door frame */
+        glColor3f(0.2f,0.2f,0.25f);
         glPushMatrix();
-        glTranslatef(0,0.5f,0.9f);
-        glScalef(2.2f,0.15f,0.15f);
+        glTranslatef(0.5f,0.0f,0.78f);
+        glScalef(0.5f,1.2f,0.05f);
         glutSolidCube(1);
         glPopMatrix();
 
+        /* roof cap */
+        glColor3f(gc[ci][0]*0.6f,gc[ci][1]*0.6f,gc[ci][2]*0.6f);
+        glPushMatrix();
+        glTranslatef(0,1.0f,0);
+        glScalef(1.6f,0.2f,1.2f);
+        glutSolidCube(1);
+        glPopMatrix();
+
+        /* bottom base */
+        glColor3f(0.3f,0.3f,0.35f);
+        glPushMatrix();
+        glTranslatef(0,-1.0f,0);
+        glScalef(1.6f,0.2f,1.2f);
+        glutSolidCube(1);
+        glPopMatrix();
+        /* roof */
+        glColor3f(gc[ci][0]*0.62f,gc[ci][1]*0.62f,gc[ci][2]*0.62f);
+        glPushMatrix();glTranslatef(0,1.0f,0);glScalef(2.4f,0.30f,1.65f);glutSolidCube(1);glPopMatrix();
+        /* windows */
+        glColor3f(0.70f,0.92f,1.0f);
+        glPushMatrix();glTranslatef(0,0.08f,0.78f);glScalef(1.65f,0.72f,0.06f);glutSolidCube(1);glPopMatrix();
+        glPushMatrix();glTranslatef(0,0.08f,-0.78f);glScalef(1.65f,0.72f,0.06f);glutSolidCube(1);glPopMatrix();
+        /* window frame */
+        glColor3f(0.25f,0.25f,0.30f);
+        glPushMatrix();glTranslatef(0,0.08f,0.80f);glScalef(1.85f,0.80f,0.04f);glutSolidCube(1);glPopMatrix();
+        /* interior glow */
+        glDisable(GL_LIGHTING);
+        float hue=ledTime+g*0.35f;
+        glColor3f(0.6f+0.4f*sinf(hue)*.5f,0.6f+0.4f*sinf(hue+2.1f)*.5f,1.0f);
+        glPushMatrix();glTranslatef(0,0.08f,0.79f);glutSolidSphere(0.12f,5,5);glPopMatrix();
+        glEnable(GL_LIGHTING);
+        /* door */
+        glColor3f(gc[ci][0]*0.75f,gc[ci][1]*0.75f,gc[ci][2]*0.75f);
+        glPushMatrix();glTranslatef(0.60f,-.05f,.77f);glScalef(0.82f,1.4f,.07f);glutSolidCube(1);glPopMatrix();
         glPopMatrix();
     }
-
-    glPopMatrix(); // wheel
-
-    gluDeleteQuadric(q);
-    glPopMatrix();
+    glPopMatrix(); /* end rotating group */
+    gluDeleteQuadric(q);glPopMatrix();
 }
 void updateTrain() {
     if (trainRunning) {
