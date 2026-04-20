@@ -3134,12 +3134,14 @@ for(int i=0;i<8;i++){
 /* ═══ FOOD COURT (SW quadrant) ═══
        3 stalls side by side, vendor behind each, big tables in front */
     /* Food court paved floor */
-    glDisable(GL_LIGHTING);
-    glColor3f(0.76f,0.72f,0.62f);
-    glBegin(GL_QUADS);
-    glVertex3f(-62,0.01f,-62);glVertex3f(-20,0.01f,-62);
-    glVertex3f(-20,0.01f,-10);glVertex3f(-62,0.01f,-10);
-    glEnd();
+    //glDisable(GL_LIGHTING);
+    // glColor3f(0.76f,0.72f,0.62f);
+    // glBegin(GL_QUADS);
+    // glVertex3f(-62,0.01f,-62);glVertex3f(-20,0.01f,-62);
+    // glVertex3f(-20,0.01f,-10);glVertex3f(-62,0.01f,-10);
+   // glEnd();
+
+   glEnable(GL_LIGHTING);
 
 
     /* 3 food stalls side by side */
