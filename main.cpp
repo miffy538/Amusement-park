@@ -114,8 +114,8 @@ GLuint createTexture(const char* file){
 }
 
 GLuint pizzaTex;
- GLuint burgerTex;
-  GLuint iceTex;
+GLuint burgerTex;
+GLuint iceTex;
 GLuint waterTex;
 
 float waterTime = 0.0f;
@@ -1155,6 +1155,7 @@ void drawFunlandGate(float cx,float cz){
     gluDeleteQuadric(q);glPopMatrix();
 }
 
+
 /* ─────────────────────────────
    TICKET BOOTH
 ───────────────────────────── */
@@ -1709,34 +1710,46 @@ void drawRingTossStall(float cx,float cz,float ang){
 /* ─────────────────────────────
    SHOOTING GALLERY
 ───────────────────────────── */
-void drawShootingGallery(){
-    GLUquadric* q = gluNewQuadric();
-
-    // Barrel
-    glColor3f(0.1f,0.1f,0.1f);
-    glPushMatrix();
-    glRotatef(-90,1,0,0);
-    gluCylinder(q,0.05,0.05,1.2,10,1);
-    glPopMatrix();
-
-    // Body
-    glColor3f(0.3f,0.3f,0.3f);
-    glPushMatrix();
-    glTranslatef(0,0.2f,0);
-    glScalef(0.3f,0.2f,1.0f);
-    glutSolidCube(1);
-    glPopMatrix();
-
-    // Handle
-    glColor3f(0.4f,0.25f,0.1f);
-    glPushMatrix();
-    glTranslatef(0,-0.2f,0.3f);
-    glRotatef(-20,1,0,0);
-    glScalef(0.2f,0.5f,0.3f);
-    glutSolidCube(1);
-    glPopMatrix();
-
-    gluDeleteQuadric(q);
+void drawShootingGallery(float cx,float cz,float ang){
+    glPushMatrix();glTranslatef(cx,0,cz);glRotatef(ang,0,1,0);
+    GLUquadric*q=gluNewQuadric();
+    glColor3f(0.18f,0.28f,0.68f);
+    glPushMatrix();glScalef(5.0f,1.2f,2.5f);glTranslatef(0,.5f,0);glutSolidCube(1);glPopMatrix();
+    glColor3f(.75f,.72f,.65f);
+    glPushMatrix();glTranslatef(0,1.28f,0);glScalef(5.2f,.12f,2.6f);glutSolidCube(1);glPopMatrix();
+    glColor3f(0.22f,0.38f,0.78f);
+    glPushMatrix();glTranslatef(0,3.2f,-1.2f);glScalef(5.2f,4.2f,.15f);glutSolidCube(1);glPopMatrix();
+    for(int t=0;t<5;t++){
+        float ta=sinf(windTime*0.8f+t*1.2f);
+        glColor3f(0.95f,0.78f,0.12f);
+        glPushMatrix();glTranslatef(-1.8f+t*.9f,3.5f+ta*.4f,-1.05f);
+        glScalef(.35f,.28f,.15f);glutSolidSphere(1,8,8);glPopMatrix();
+        glColor3f(1.0f,0.6f,0.0f);
+        glPushMatrix();glTranslatef(-1.4f+t*.9f,3.6f+ta*.4f,-1.05f);
+        glScalef(.18f,.12f,.08f);glutSolidSphere(1,6,6);glPopMatrix();
+    }
+    float bc[][3]={{1,.1f,.1f},{.1f,.5f,1},{.1f,.9f,.2f},{1,.85f,.0f}};
+    for(int p=0;p<4;p++){
+        glColor3f(bc[p][0],bc[p][1],bc[p][2]);
+        glPushMatrix();glTranslatef(-1.4f+p*.9f,4.5f,-1.1f);
+        glScalef(.5f,.6f,.5f);glutSolidSphere(1,8,8);glPopMatrix();
+        glColor3f(1,1,0);
+        glPushMatrix();glTranslatef(-1.4f+p*.9f,4.9f,-.8f);
+        glutSolidSphere(.12f,6,6);glPopMatrix();
+    }
+    glColor3f(.42f,.28f,.12f);
+    glPushMatrix();glTranslatef(0,1.38f,1.1f);glScalef(5.0f,.18f,.32f);glutSolidCube(1);glPopMatrix();
+    for(int s=0;s<10;s++){
+        glColor3f(s%2==0?.12f:.98f,s%2==0?.28f:.10f,s%2==0?.68f:.10f);
+        float ax=-2.4f+s*.5f;
+        glBegin(GL_QUADS);
+        glVertex3f(ax,5.5f,1.3f);glVertex3f(ax+.5f,5.5f,1.3f);
+        glVertex3f(ax+.5f,4.9f,1.9f);glVertex3f(ax,4.9f,1.9f);glEnd();
+        glBegin(GL_QUADS);
+        glVertex3f(ax,5.5f,-1.3f);glVertex3f(ax+.5f,5.5f,-1.3f);
+        glVertex3f(ax+.5f,5.5f,1.3f);glVertex3f(ax,5.5f,1.3f);glEnd();
+    }
+    gluDeleteQuadric(q);glPopMatrix();
 }
 
 void drawCircusTent(float cx, float cz) {
@@ -1899,7 +1912,6 @@ for(int g=0; g<4; g++){
 
     glScalef(0.9f,0.9f,0.9f);   // size
 
-    drawShootingGallery();
 
     glPopMatrix();
 }
@@ -3286,7 +3298,7 @@ for(int i=0;i<8;i++){
 
     /* ── GAME STALLS (NW, X=-62..-22, Z=+10..+62) ── */
     drawRingTossStall  (-52,06,90);
-    //drawShootingGallery(-52,-15, 90);
+    drawShootingGallery(-52,-15, 90);
     // drawBalloonStall   (-36,18,180);
     // drawBalloonStall   (-48,18, 90);
     drawLampPost(-32,20);drawLampPost(-57,22);drawLampPost(-48,50);
