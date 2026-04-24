@@ -1,3 +1,6 @@
+Here’s your **cleanly updated README** with **macOS instructions added properly** and formatting fixed:
+
+---
 
 # Amusement Park Layout (Computer Graphics Project)
 
@@ -5,7 +8,7 @@
 
 This project presents a 3D isometric amusement park environment developed using OpenGL (GLUT) in C++. It focuses on designing a structured and visually organized park layout by applying core computer graphics concepts such as transformations, lighting, and scene composition.
 
-The current implementation emphasizes layout planning, including roads, zones, and environmental elements, along with initial interactive components and animations.
+The current implementation emphasizes layout planning, including roads, zones, and environmental elements, along with interactive components and animations.
 
 ---
 
@@ -17,16 +20,18 @@ The current implementation emphasizes layout planning, including roads, zones, a
 * Decorative boundary wall with entrance gate
 * Central roundabout with fountain area
 * Environmental elements such as trees, benches, lamps, and sky
-* Animated components:
 
-  * Moving train system
-  * Rotating wheels and rides
-  * Balloon and lighting effects
-* User interaction:
+**Animated components:**
 
-  * Camera rotation (mouse and keyboard)
-  * Zoom control
-  * Toggle animations for rides
+* Moving train system
+* Rotating wheels and rides
+* Balloon and lighting effects
+
+**User interaction:**
+
+* Camera rotation (mouse and keyboard)
+* Zoom control
+* Toggle animations for rides
 
 ---
 
@@ -49,6 +54,7 @@ Project/
 ├── pizza.bmp         # Food texture
 ├── icecream.bmp      # Food texture
 ├── water.bmp         # Water texture
+```
 
 ---
 
@@ -63,7 +69,7 @@ Project/
 | W            | Toggle Ferris wheel animation |
 | R            | Toggle roller coaster         |
 | C            | Toggle merry-go-round         |
-| T            | Start/Stop train |
+| T            | Start/Stop train              |
 
 ---
 
@@ -104,6 +110,34 @@ g++ main.cpp -o main -lfreeglut -lopengl32 -lgdi32
 
 ```bash
 ./main
+```
+
+---
+
+### macOS
+
+1. Install dependencies (using Homebrew):
+
+```bash
+brew install freeglut
+```
+
+2. Compile:
+
+```bash
+g++ main.cpp -o main -framework OpenGL -framework GLUT
+```
+
+3. Run:
+
+```bash
+./main
+```
+
+Note: If you face GLUT issues, ensure Xcode Command Line Tools are installed:
+
+```bash
+xcode-select --install
 ```
 
 ---
